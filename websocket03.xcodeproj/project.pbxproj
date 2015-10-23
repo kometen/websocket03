@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		48F6557B1BD77CA400A0B981 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 48F6557A1BD77CA400A0B981 /* main.cpp */; };
+		48F655821BD7850100A0B981 /* libboost_system-mt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 48F655811BD7850100A0B981 /* libboost_system-mt.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +26,7 @@
 /* Begin PBXFileReference section */
 		48F655771BD77CA400A0B981 /* websocket03 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = websocket03; sourceTree = BUILT_PRODUCTS_DIR; };
 		48F6557A1BD77CA400A0B981 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		48F655811BD7850100A0B981 /* libboost_system-mt.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libboost_system-mt.dylib"; path = "../../../../../opt/local/lib/libboost_system-mt.dylib"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +34,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				48F655821BD7850100A0B981 /* libboost_system-mt.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -41,6 +44,7 @@
 		48F6556E1BD77CA400A0B981 = {
 			isa = PBXGroup;
 			children = (
+				48F655811BD7850100A0B981 /* libboost_system-mt.dylib */,
 				48F655791BD77CA400A0B981 /* websocket03 */,
 				48F655781BD77CA400A0B981 /* Products */,
 			);
@@ -205,6 +209,8 @@
 		48F6557F1BD77CA400A0B981 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = /opt/local/include;
+				LIBRARY_SEARCH_PATHS = /opt/local/lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -212,6 +218,8 @@
 		48F655801BD77CA400A0B981 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = /opt/local/include;
+				LIBRARY_SEARCH_PATHS = /opt/local/lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
