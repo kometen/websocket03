@@ -90,8 +90,11 @@ public:
         }
         
         if (jdata["type"] == "msg") {
-            std::string msg = jdata["data"];
-            std::cout << "Message sent: " << msg << std::endl;
+            std::string clientmsg = jdata["data"];
+            std::cout << "Message sent: " << clientmsg << std::endl;
+            jdata["cnt"] = clientmsg.length();
+            msg->set_payload(jdata.dump());
+            m_server.send(hdl, msg);
         }
     }
     

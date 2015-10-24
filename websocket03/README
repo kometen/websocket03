@@ -1,0 +1,5 @@
+This is a server written in C++  that uses websockets and json.
+Websocket is provided by websocketpp and json by nlohmann / json.
+
+https://github.com/zaphoyd/websocketpp
+https://github.com/nlohmann/json
