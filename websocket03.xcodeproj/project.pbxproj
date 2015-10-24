@@ -24,7 +24,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		480C48811BDC3B2700A28A3E /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
+		480C48811BDC3B2700A28A3E /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = README; path = websocket03/README; sourceTree = "<group>"; };
 		48F655771BD77CA400A0B981 /* websocket03 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = websocket03; sourceTree = BUILT_PRODUCTS_DIR; };
 		48F6557A1BD77CA400A0B981 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		48F655811BD7850100A0B981 /* libboost_system-mt.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libboost_system-mt.dylib"; path = "../../../../../opt/local/lib/libboost_system-mt.dylib"; sourceTree = "<group>"; };
@@ -45,6 +45,7 @@
 		48F6556E1BD77CA400A0B981 = {
 			isa = PBXGroup;
 			children = (
+				480C48811BDC3B2700A28A3E /* README */,
 				48F655811BD7850100A0B981 /* libboost_system-mt.dylib */,
 				48F655791BD77CA400A0B981 /* websocket03 */,
 				48F655781BD77CA400A0B981 /* Products */,
@@ -63,7 +64,6 @@
 			isa = PBXGroup;
 			children = (
 				48F6557A1BD77CA400A0B981 /* main.cpp */,
-				480C48811BDC3B2700A28A3E /* README */,
 			);
 			path = websocket03;
 			sourceTree = "<group>";
