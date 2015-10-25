@@ -77,24 +77,30 @@ public:
         connection_ptr con = m_server.get_con_from_hdl(hdl);
         
         std::string payload = msg->get_payload();
-        auto jdata = nlohmann::json::parse(payload);
-
-        if (jdata["type"] == "lgn") {
-            std::string lname = jdata["data"];
-            if (con->name == "") {
-                con->name = lname;
-                std::cout << "Setting name with session id " << con->session_id << " to " << lname << std::endl;
-            } else {
-                std::cout << "Got message from connection " << lname << " with session id " << con->session_id << std::endl;
+        try {
+            auto jdata = nlohmann::json::parse(payload);
+            
+            if (jdata["type"] == "lgn") {
+                std::string lname = jdata["data"];
+                if (con->name == "") {
+                    con->name = lname;
+                    std::cout << "Setting name with session id " << con->session_id << " to " << lname << std::endl;
+                } else {
+                    std::cout << "Got message from connection " << lname << " with session id " << con->session_id << std::endl;
+                }
             }
-        }
-        
-        if (jdata["type"] == "msg") {
-            std::string clientmsg = jdata["data"];
-            std::cout << "Message sent: " << clientmsg << std::endl;
-            jdata["cnt"] = clientmsg.length();
-            msg->set_payload(jdata.dump());
+            
+            if (jdata["type"] == "msg") {
+                std::string clientmsg = jdata["data"];
+                std::cout << "Message sent: " << clientmsg << std::endl;
+                jdata["cnt"] = clientmsg.length();
+                msg->set_payload(jdata.dump());
+                m_server.send(hdl, msg);
+            }
+        } catch (const std::exception& e) {
+            msg->set_payload("Unable to parse json");
             m_server.send(hdl, msg);
+            std::cerr << "Unable to parse json: " << e.what() << std::endl;
         }
     }
     
