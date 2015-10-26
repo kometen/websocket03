@@ -105,7 +105,7 @@ public:
     }
     
     void run(uint16_t port) {
-        m_server.listen(port);
+        m_server.listen(websocketpp::lib::asio::ip::tcp::v4(), port);
         m_server.start_accept();
         m_server.run();
     }
