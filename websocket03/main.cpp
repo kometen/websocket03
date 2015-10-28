@@ -65,6 +65,7 @@ public:
         connection_ptr con = m_server.get_con_from_hdl(hdl);
         
         con->session_id = ++m_next_session_id;
+        std::cout << "Opening connection with connection id " << con->session_id << std::endl;
     }
     
     void on_close(connection_hdl hdl) {
