@@ -98,6 +98,12 @@ public:
                 msg->set_payload(jdata.dump());
                 m_server.send(hdl, msg);
             }
+            
+            if (jdata["type"] == "request") {
+                jdata["teams"] = { "Barcelona", "Real Madrid", "Atletico Madrid" };
+                msg->set_payload(jdata.dump());
+                m_server.send(hdl, msg);
+            }
         } catch (const std::exception& e) {
             msg->set_payload("Unable to parse json");
             m_server.send(hdl, msg);
