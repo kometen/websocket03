@@ -101,6 +101,7 @@ public:
             
             if (jdata["type"] == "request") {
                 jdata.clear();
+                jdata["type"] = "request";
                 jdata["teams"] = {  {{"team", "Barcelona"}, {"points", 24}, {"stats", {8, 0, 2, 22, 12}}}, \
                                     {{"team", "Real Madrid"}, {"points", 24}, {"stats", {7, 3, 0, 24, 4}}}, \
                                     {{"team", "Celta Vigo"}, {"points", 21}, {"stats", {6, 3, 1 }}}
