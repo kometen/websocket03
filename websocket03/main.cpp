@@ -77,6 +77,14 @@ public:
     void on_message(connection_hdl hdl, server::message_ptr msg) {
         connection_ptr con = m_server.get_con_from_hdl(hdl);
         
+        nlohmann::json table;
+        table["type"] = "table";
+        table["teams"] = {
+            {{"team", "Barcelona"}, {"points", 24}, {"stats", {8, 0, 2, 22, 12}}}, \
+            {{"team", "Real Madrid"}, {"points", 24}, {"stats", {7, 3, 0, 24, 4}}}, \
+            {{"team", "Celta Vigo"}, {"points", 21}, {"stats", {6, 3, 1 }}}
+        };
+
         std::string payload = msg->get_payload();
         try {
             auto jdata = nlohmann::json::parse(payload);
@@ -99,16 +107,13 @@ public:
                 m_server.send(hdl, msg);
             }
             
+            // Show table
             if (jdata["type"] == "request") {
-                jdata.clear();
-                jdata["type"] = "request";
-                jdata["teams"] = {  {{"team", "Barcelona"}, {"points", 24}, {"stats", {8, 0, 2, 22, 12}}}, \
-                                    {{"team", "Real Madrid"}, {"points", 24}, {"stats", {7, 3, 0, 24, 4}}}, \
-                                    {{"team", "Celta Vigo"}, {"points", 21}, {"stats", {6, 3, 1 }}}
-                };
-                msg->set_payload(jdata.dump());
+                msg->set_payload(table.dump());
                 m_server.send(hdl, msg);
             }
+            
+            
         } catch (const std::exception& e) {
             msg->set_payload("Unable to parse json");
             m_server.send(hdl, msg);
