@@ -113,6 +113,14 @@ public:
                 m_server.send(hdl, msg);
             }
             
+            // Update stats
+            if (jdata["type"] == "update") {
+                unsigned int points = table["teams"]["Celta Vigo"]["points"];
+                unsigned int given = jdata["data"];
+                std::cout << "Points given: " << given << ", points: " << points << std::endl;
+                table["teams"]["Celta Vigo"]["points"] = points + given;
+            }
+            
             
         } catch (const std::exception& e) {
             msg->set_payload("Unable to parse json");
