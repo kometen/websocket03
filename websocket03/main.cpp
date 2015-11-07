@@ -51,14 +51,23 @@ class print_server {
 private:
     unsigned int m_next_session_id;
     server m_server;
+    nlohmann::json table;
     
 public:
+
     print_server() : m_next_session_id(1) {
         m_server.init_asio();
         
         m_server.set_open_handler(bind(&print_server::on_open, this, ::_1));
         m_server.set_close_handler(bind(&print_server::on_close, this, ::_1));
         m_server.set_message_handler(bind(&print_server::on_message, this, ::_1, ::_2));
+
+        table["type"] = "table";
+        table["teams"] = {
+            {{"team", "Barcelona"}, {"points", 24}, {"stats", {8, 0, 2, 22, 12}}}, \
+            {{"team", "Real Madrid"}, {"points", 24}, {"stats", {7, 3, 0, 24, 4}}}, \
+            {{"team", "Celta Vigo"}, {"points", 21}, {"stats", {6, 3, 1 }}}
+        };
     }
     
     void on_open(connection_hdl hdl) {
@@ -76,18 +85,14 @@ public:
     
     void on_message(connection_hdl hdl, server::message_ptr msg) {
         connection_ptr con = m_server.get_con_from_hdl(hdl);
-        
-        nlohmann::json table;
-        table["type"] = "table";
-        table["teams"] = {
-            {{"team", "Barcelona"}, {"points", 24}, {"stats", {8, 0, 2, 22, 12}}}, \
-            {{"team", "Real Madrid"}, {"points", 24}, {"stats", {7, 3, 0, 24, 4}}}, \
-            {{"team", "Celta Vigo"}, {"points", 21}, {"stats", {6, 3, 1 }}}
-        };
 
+        nlohmann::json jdata;
+        
         std::string payload = msg->get_payload();
+        
         try {
-            auto jdata = nlohmann::json::parse(payload);
+            jdata.clear();
+            jdata = nlohmann::json::parse(payload);
             
             if (jdata["type"] == "lgn") {
                 std::string lname = jdata["data"];
@@ -115,10 +120,12 @@ public:
             
             // Update stats
             if (jdata["type"] == "update") {
-                unsigned int points = table["teams"]["Celta Vigo"]["points"];
-                unsigned int given = jdata["data"];
-                std::cout << "Points given: " << given << ", points: " << points << std::endl;
-                table["teams"]["Celta Vigo"]["points"] = points + given;
+                std::string s = jdata["data"];
+                unsigned int points = table["teams"][2]["points"];
+                unsigned int given = std::stoi(s);
+                table["teams"][2]["points"] = (points + given);
+                msg->set_payload(table.dump());
+                m_server.send(hdl, msg);
             }
             
             
