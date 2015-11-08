@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <json.hpp>
+#include <set>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 
@@ -49,9 +50,12 @@ using websocketpp::lib::bind;
 
 class print_server {
 private:
+    int connections = 0;
     unsigned int m_next_session_id;
     server m_server;
     nlohmann::json table;
+    typedef std::set<connection_hdl, std::owner_less<connection_hdl>> con_list;
+    con_list m_connections;
     
 public:
 
@@ -75,12 +79,14 @@ public:
         
         con->session_id = ++m_next_session_id;
         std::cout << "Opening connection with connection id " << con->session_id << std::endl;
+        m_connections.insert(hdl);
     }
     
     void on_close(connection_hdl hdl) {
         connection_ptr con = m_server.get_con_from_hdl(hdl);
         
         std::cout << "Closing connection " << con->name << " with session id " << con->session_id << std::endl;
+        m_connections.erase(hdl);
     }
     
     void on_message(connection_hdl hdl, server::message_ptr msg) {
@@ -124,8 +130,10 @@ public:
                 unsigned int points = table["teams"][2]["points"];
                 unsigned int given = std::stoi(s);
                 table["teams"][2]["points"] = (points + given);
-                msg->set_payload(table.dump());
-                m_server.send(hdl, msg);
+                for (auto it : m_connections) {
+                    msg->set_payload(table.dump());
+                    m_server.send(it, msg);
+                }
             }
             
             
