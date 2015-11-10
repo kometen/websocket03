@@ -10,6 +10,8 @@
 
 #include <iostream>
 #include <json.hpp>
+#include <map>
+#include <pqxx/pqxx>
 #include <set>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
@@ -56,6 +58,7 @@ private:
     nlohmann::json table;
     typedef std::set<connection_hdl, std::owner_less<connection_hdl>> con_list;
     con_list m_connections;
+    const char* sql;
     
 public:
 
@@ -67,11 +70,8 @@ public:
         m_server.set_message_handler(bind(&print_server::on_message, this, ::_1, ::_2));
 
         table["type"] = "table";
-        table["teams"] = {
-            {{"team", "Barcelona"}, {"points", 24}, {"stats", {8, 0, 2, 22, 12}}}, \
-            {{"team", "Real Madrid"}, {"points", 24}, {"stats", {7, 3, 0, 24, 4}}}, \
-            {{"team", "Celta Vigo"}, {"points", 21}, {"stats", {6, 3, 1 }}}
-        };
+        table["teams"] = { };
+        
     }
     
     void on_open(connection_hdl hdl) {
@@ -149,11 +149,46 @@ public:
         m_server.start_accept();
         m_server.run();
     }
+    
+    int get_table() {
+        int ret = 0;
+        std::map<std::string, std::string> t_map;
+        try {
+            pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
+            if (C.is_open()) {
+                std::cout << "Connected to database" << std::endl;
+            } else {
+                std::cout << "Unable to connect to database" << std::endl;
+                ret = 1;
+            }
+            sql = "select * from teams where league = 'La Liga' and season = '2015/2016'";
+            pqxx::nontransaction N(C);
+            pqxx::result R(N.exec(sql));
+            
+            for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
+                std::cout << "id = " << c[0].as<int>();
+                std::cout << ", league = " << c[1].as<std::string>();
+                std::cout << ", team = " << c[2].as<std::string>() << std::endl;
+                t_map.emplace("team", c[2].as<std::string>());
+                t_map.emplace("points", std::to_string(c[4].as<int>()));
+                table["teams"] += { {"team", c[2].as<std::string>()}, {"points", c[4].as<int>()} };
+                t_map.clear();
+            }
+            C.disconnect();
+            
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+            ret = 1;
+        }
+        return ret;
+    }
 };
 
 int main(int argc, const char * argv[]) {
-    std::cout << "Hello, World!\n";
     print_server server;
-    server.run(9002);
+    int db_connect = server.get_table();
+    if (db_connect == 0) {
+        server.run(9002);
+    }
     return 0;
 }
