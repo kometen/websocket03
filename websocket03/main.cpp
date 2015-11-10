@@ -152,7 +152,6 @@ public:
     
     int get_table() {
         int ret = 0;
-        std::map<std::string, std::string> t_map;
         try {
             pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
             if (C.is_open()) {
@@ -169,10 +168,7 @@ public:
                 std::cout << "id = " << c[0].as<int>();
                 std::cout << ", league = " << c[1].as<std::string>();
                 std::cout << ", team = " << c[2].as<std::string>() << std::endl;
-                t_map.emplace("team", c[2].as<std::string>());
-                t_map.emplace("points", std::to_string(c[4].as<int>()));
                 table["teams"] += { {"team", c[2].as<std::string>()}, {"points", c[4].as<int>()} };
-                t_map.clear();
             }
             C.disconnect();
             
