@@ -10,7 +10,7 @@
 
 #include <iostream>
 #include <json.hpp>
-#include <map>
+#include <unordered_map>
 #include <pqxx/pqxx>
 #include <set>
 #include <websocketpp/config/asio_no_tls.hpp>
@@ -56,6 +56,7 @@ private:
     unsigned int m_next_session_id;
     server m_server;
     nlohmann::json table;
+    std::unordered_map<std::string, unsigned int> teams_um;
     typedef std::set<connection_hdl, std::owner_less<connection_hdl>> con_list;
     con_list m_connections;
     const char* sql;
@@ -126,13 +127,18 @@ public:
             
             // Update stats
             if (jdata["type"] == "update") {
-                std::string s = jdata["data"];
-                unsigned int points = table["teams"][2]["points"];
-                unsigned int given = std::stoi(s);
-                table["teams"][2]["points"] = (points + given);
-                for (auto it : m_connections) {
-                    msg->set_payload(table.dump());
-                    m_server.send(it, msg);
+                std::string t = jdata["team"];
+                std::string p = jdata["points"];
+                // If team is in unordered_map (reverse lookup).
+                if (teams_um.count(t)) {
+                    auto i = teams_um.find(t);
+                    unsigned int points = table["teams"][i->second]["points"];
+                    unsigned int given = std::stoi(p);
+                    table["teams"][i->second]["points"] = (points + given);
+                    for (auto it : m_connections) {
+                        msg->set_payload(table.dump());
+                        m_server.send(it, msg);
+                    }
                 }
             }
             
@@ -163,12 +169,13 @@ public:
             sql = "select * from teams where league = 'La Liga' and season = '2015/2016'";
             pqxx::nontransaction N(C);
             pqxx::result R(N.exec(sql));
-            
+            int im = -1;
             for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
                 std::cout << "id = " << c[0].as<int>();
                 std::cout << ", league = " << c[1].as<std::string>();
                 std::cout << ", team = " << c[2].as<std::string>() << std::endl;
                 table["teams"] += { {"team", c[2].as<std::string>()}, {"points", c[4].as<int>()} };
+                teams_um.emplace(c[2].as<std::string>(), ++im);
             }
             C.disconnect();
             
@@ -186,5 +193,5 @@ int main(int argc, const char * argv[]) {
     if (db_connect == 0) {
         server.run(9002);
     }
-    return 0;
+    return db_connect;
 }
