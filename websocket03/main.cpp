@@ -117,7 +117,7 @@ public:
             
             if (jdata["type"] == "msg") {
                 std::string clientmsg = jdata["data"];
-                std::cout << "Message sent: " << clientmsg << std::endl;
+//                std::cout << "Message sent: " << clientmsg << std::endl;
                 jdata["cnt"] = clientmsg.length();
                 msg->set_payload(jdata.dump());
                 m_server.send(hdl, msg);
@@ -125,10 +125,12 @@ public:
             
             // Show table
             if (jdata["type"] == "request") {
-                msg->set_payload(table.dump());
-                m_server.send(hdl, msg);
-                msg->set_payload(matches.dump());
-                m_server.send(hdl, msg);
+                show_table(hdl, msg);
+/*                msg->set_payload(table.dump());
+                m_server.send(hdl, msg);*/
+                show_matches(hdl, msg);
+/*                msg->set_payload(matches.dump());
+                m_server.send(hdl, msg);*/
             }
             
             // Update stats
@@ -151,27 +153,50 @@ public:
 
             // Goal scored
             if (jdata["type"] == "goal") {
-                std::cout << "Goal scored by " << jdata["scoringteam"] << ", hometeam: " << jdata["hometeam"] << ", awayteam: " << jdata["awayteam"] << std::endl;
-
-                // If it was equal score and hometeam score. Else ...
-                if (jdata["hometeam_score"] == jdata["awayteam_score"] && jdata["scoringteam"] == "hometeam") {
-                    std::cout << "Add two points to the hometeam and subtract one from the awayteam." << std::endl;
-                } else {
-                    std::cout << "Subtract one point from the hometeam and add two to the awayteam." << std::endl;
-                }
-                
                 unsigned int hts = jdata["hometeam_score"];
                 unsigned int ats = jdata["awayteam_score"];
-
-                // If hometeam is down by one and scores.
-                if ((hts - ats) == -1 && jdata["scoringteam"] == "hometeam") {
-                    std::cout << "Add one point to hometeam and subtract two points from awayteam" << std::endl;
+                std::string minusone = "-1";
+                std::string minustwo = "-2";
+                std::string one = "1";
+                std::string two = "2";
+                
+                // If it was equal score and hometeam score. Or other way round. And shuffle points.
+                if (hts == ats && jdata["scoringteam"] == "hometeam") {
+                    // Add two points to the hometeam. And subtract one from the awayteam.
+                    update_standing(two, jdata["league"], jdata["season"], jdata["hometeam"]);
+                    update_standing(minusone, jdata["league"], jdata["season"], jdata["awayteam"]);
+                }
+                if (hts == ats && jdata["scoringteam"] == "awayteam") {
+                    // Subtract one point from the hometeam and add two to the awayteam.
+                    update_standing(minusone, jdata["league"], jdata["season"], jdata["hometeam"]);
+                    update_standing(two, jdata["league"], jdata["season"], jdata["awayteam"]);
                 }
                 
-                // If awayteam is down by one and scores.
-                if ((hts - ats) == 1 && jdata["scoringteam"] == "awayteam") {
-                    std::cout << "Subtract two points from hometeam and add one point to awayteam" << std::endl;
+                // If hometeam is down by one and scores shuffle points.
+                if ((hts - ats) == -1 && jdata["scoringteam"] == "hometeam") {
+                    // Add one point to hometeam and subtract two points from awayteam.
+                    update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"]);
+                    update_standing(minustwo, jdata["league"], jdata["season"], jdata["awayteam"]);
                 }
+                
+                // If awayteam is down by one and scores shuffle points.
+                if ((hts - ats) == 1 && jdata["scoringteam"] == "awayteam") {
+                    // Subtract two points from hometeam and add one point to awayteam.
+                    update_standing(minustwo, jdata["league"], jdata["season"], jdata["hometeam"]);
+                    update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"]);
+                }
+
+                // Add goal to matches- and teams-table.
+                if (jdata["scoringteam"] == "hometeam") {
+                    update_goalscore(jdata["league"], jdata["season"], jdata["hometeam"], "home", "1", jdata["hometeam"], jdata["awayteam"]);
+                } else {
+                    update_goalscore(jdata["league"], jdata["season"], jdata["awayteam"], "away", "1", jdata["hometeam"], jdata["awayteam"]);
+                }
+
+                get_table();
+                show_table(hdl, msg);
+                get_coming_matches();
+                show_matches(hdl, msg);
             }
             
             
@@ -190,6 +215,7 @@ public:
     
     void get_table() {
         try {
+            table["teams"] = { };
             pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
             if (C.is_open()) {
                 std::cout << "Connected to database" << std::endl;
@@ -214,6 +240,7 @@ public:
     
     void get_coming_matches() {
         try {
+            matches["teams"] = { };
             pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
             if (C.is_open()) {
                 std::cout << "Connected to database" << std::endl;
@@ -222,18 +249,20 @@ public:
             }
             sql = "select * from matches where league = 'La Liga' \
                 and season = '2015/2016' \
-                and match_end_at is null \
+                and match_ended_at is null \
                 order by match_start_at asc limit 5";
             pqxx::nontransaction N(C);
             pqxx::result R(N.exec(sql));
             for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
                 matches["teams"] += { \
                     {"id", c[0].as<int>()}, \
+                    {"league", c[1].as<std::string>()}, \
+                    {"season", c[2].as<std::string>()}, \
                     {"hometeam", c[3].as<std::string>()}, \
                     {"awayteam", c[4].as<std::string>()}, \
                     {"match_start_at", c[5].as<std::string>()}, \
-                    {"hometeam_score", c[7].as<int>()}, \
-                    {"awayteam_score", c[8].as<int>()} \
+                    {"hometeam_score", c[8].as<int>()}, \
+                    {"awayteam_score", c[9].as<int>()} \
                 };
             }
             C.disconnect();
@@ -242,6 +271,84 @@ public:
             std::cerr << e.what() << std::endl;
         }
     }
+
+    void update_standing(std::string points, std::string league, std::string season, std::string team) {
+        try {
+            pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
+            if (C.is_open()) {
+//                std::cout << "Connected to database" << std::endl;
+            } else {
+                std::cout << "Unable to connect to database" << std::endl;
+            }
+
+            std::string query = "";
+            pqxx::work W(C);
+
+            query = "update teams set points = points + " + points;
+            query += " where league = '" + league;
+            query += "' and season = '" + season;
+            query += "' and team = '" + team + "'";
+            std::cout << "update table teams: " << query << std::endl;
+
+            W.exec(query);
+            W.commit();
+            C.disconnect();
+            
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+        }
+    }
+    
+    void update_goalscore(std::string league, std::string season, std::string team, std::string venue, std::string goal, std::string hometeam, std::string awayteam) {
+        try {
+            pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
+            if (C.is_open()) {
+                //                std::cout << "Connected to database" << std::endl;
+            } else {
+                std::cout << "Unable to connect to database" << std::endl;
+            }
+            
+            std::string query = "";
+            pqxx::work W(C);
+            
+            query = "update matches set " + venue + "team_score = " + venue + "team_score + " + goal;
+            query += " where league = '" + league;
+            query += "' and season = '" + season;
+            query += "' and " + venue + "team = '" + team + "'";
+            std::cout << "update table matches: " << query << std::endl;
+
+            W.exec(query);
+            
+            if (venue == "home") {
+                query = "update teams set goals_for = goals_for + " + goal;
+                query += " where league = '" + league;
+                query += "' and season = '" + season;
+                query += "' and team = '" + hometeam + "'";
+            } else {
+                query = "update teams set goals_for = goals_for + " + goal;
+                query += " where league = '" + league;
+                query += "' and season = '" + season;
+                query += "' and team = '" + awayteam + "'";
+            }
+            
+            W.commit();
+            C.disconnect();
+            
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+        }
+    }
+    
+    void show_table(connection_hdl hdl, server::message_ptr msg) {
+        msg->set_payload(table.dump());
+        m_server.send(hdl, msg);
+    }
+    
+    void show_matches(connection_hdl hdl, server::message_ptr msg) {
+        msg->set_payload(matches.dump());
+        m_server.send(hdl, msg);
+    }
+
 };
 
 int main(int argc, const char * argv[]) {
