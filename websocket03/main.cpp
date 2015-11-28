@@ -117,7 +117,6 @@ public:
             
             if (jdata["type"] == "msg") {
                 std::string clientmsg = jdata["data"];
-//                std::cout << "Message sent: " << clientmsg << std::endl;
                 jdata["cnt"] = clientmsg.length();
                 msg->set_payload(jdata.dump());
                 m_server.send(hdl, msg);
@@ -126,11 +125,7 @@ public:
             // Show table
             if (jdata["type"] == "request") {
                 show_table(hdl, msg);
-/*                msg->set_payload(table.dump());
-                m_server.send(hdl, msg);*/
                 show_matches(hdl, msg);
-/*                msg->set_payload(matches.dump());
-                m_server.send(hdl, msg);*/
             }
             
             // Update stats
@@ -194,9 +189,11 @@ public:
                 }
 
                 get_table();
-                show_table(hdl, msg);
                 get_coming_matches();
-                show_matches(hdl, msg);
+                for (auto it : m_connections) {
+                    show_table(it, msg);
+                    show_matches(it, msg);
+                }
             }
             
             
