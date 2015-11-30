@@ -57,6 +57,7 @@ private:
     server m_server;
     nlohmann::json table;
     nlohmann::json matches;
+    nlohmann::json coming_matches;
     std::unordered_map<std::string, unsigned int> teams_um;
     typedef std::set<connection_hdl, std::owner_less<connection_hdl>> con_list;
     con_list m_connections;
@@ -76,6 +77,9 @@ public:
         
         matches["type"] = "matches";
         matches["teams"] = { };
+        
+        coming_matches["type"] = "coming_matches";
+        coming_matches["teams"] = { };
         
     }
     
@@ -126,6 +130,7 @@ public:
             if (jdata["type"] == "request") {
                 show_table(hdl, msg);
                 show_matches(hdl, msg);
+                show_coming_matches(hdl, msg);
             }
             
             // Update stats
@@ -152,33 +157,35 @@ public:
                 unsigned int ats = jdata["awayteam_score"];
                 std::string minusone = "-1";
                 std::string minustwo = "-2";
+                std::string zero = "0";
                 std::string one = "1";
                 std::string two = "2";
                 
-                // If it was equal score and hometeam score. Or other way round. And shuffle points.
+                // If it was equal score and hometeam score. And shuffle points.
                 if (hts == ats && jdata["scoringteam"] == "hometeam") {
                     // Add two points to the hometeam. And subtract one from the awayteam.
-                    update_standing(two, jdata["league"], jdata["season"], jdata["hometeam"]);
-                    update_standing(minusone, jdata["league"], jdata["season"], jdata["awayteam"]);
+                    update_standing(two, jdata["league"], jdata["season"], jdata["hometeam"], one, minusone, zero);
+                    update_standing(minusone, jdata["league"], jdata["season"], jdata["awayteam"], zero, minusone, one);
                 }
+                // If it was equal score and awayteam score. And shuffle points.
                 if (hts == ats && jdata["scoringteam"] == "awayteam") {
                     // Subtract one point from the hometeam and add two to the awayteam.
-                    update_standing(minusone, jdata["league"], jdata["season"], jdata["hometeam"]);
-                    update_standing(two, jdata["league"], jdata["season"], jdata["awayteam"]);
+                    update_standing(minusone, jdata["league"], jdata["season"], jdata["hometeam"], zero, minusone, one);
+                    update_standing(two, jdata["league"], jdata["season"], jdata["awayteam"], one, minusone, zero);
                 }
                 
                 // If hometeam is down by one and scores shuffle points.
                 if ((hts - ats) == -1 && jdata["scoringteam"] == "hometeam") {
                     // Add one point to hometeam and subtract two points from awayteam.
-                    update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"]);
-                    update_standing(minustwo, jdata["league"], jdata["season"], jdata["awayteam"]);
+                    update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"], zero, one, minusone);
+                    update_standing(minustwo, jdata["league"], jdata["season"], jdata["awayteam"], minusone, one, zero);
                 }
                 
                 // If awayteam is down by one and scores shuffle points.
                 if ((hts - ats) == 1 && jdata["scoringteam"] == "awayteam") {
                     // Subtract two points from hometeam and add one point to awayteam.
-                    update_standing(minustwo, jdata["league"], jdata["season"], jdata["hometeam"]);
-                    update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"]);
+                    update_standing(minustwo, jdata["league"], jdata["season"], jdata["hometeam"], minusone, one, zero);
+                    update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"], zero, one, minusone);
                 }
 
                 // Add goal to matches- and teams-table.
@@ -189,10 +196,28 @@ public:
                 }
 
                 get_table();
+                get_matches();
+                for (auto it : m_connections) {
+                    show_table(it, msg);
+                    show_matches(it, msg);
+                }
+            }
+            
+            // Start match
+            if (jdata["type"] == "start_match") {
+                std::string zero = "0";
+                std::string one = "1";
+                update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"], zero, one, zero);
+                update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"], zero, one, zero);
+                start_game(jdata["league"], jdata["season"], jdata["hometeam"], jdata["awayteam"]);
+
+                get_table();
+                get_matches();
                 get_coming_matches();
                 for (auto it : m_connections) {
                     show_table(it, msg);
                     show_matches(it, msg);
+                    show_coming_matches(it, msg);
                 }
             }
             
@@ -237,7 +262,7 @@ public:
     
     void get_coming_matches() {
         try {
-            matches["teams"] = { };
+            coming_matches["teams"] = { };
             pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
             if (C.is_open()) {
                 std::cout << "Connected to database" << std::endl;
@@ -246,8 +271,44 @@ public:
             }
             sql = "select * from matches where league = 'La Liga' \
                 and season = '2015/2016' \
+                and match_began_at is null \
                 and match_ended_at is null \
                 order by match_start_at asc limit 5";
+            pqxx::nontransaction N(C);
+            pqxx::result R(N.exec(sql));
+            for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
+                coming_matches["teams"] += { \
+                    {"id", c[0].as<int>()}, \
+                    {"league", c[1].as<std::string>()}, \
+                    {"season", c[2].as<std::string>()}, \
+                    {"hometeam", c[3].as<std::string>()}, \
+                    {"awayteam", c[4].as<std::string>()}, \
+                    {"match_start_at", c[5].as<std::string>()}, \
+                    {"hometeam_score", c[8].as<int>()}, \
+                    {"awayteam_score", c[9].as<int>()} \
+                };
+            }
+            C.disconnect();
+            
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+        }
+    }
+
+    void get_matches() {
+        try {
+            matches["teams"] = { };
+            pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
+            if (C.is_open()) {
+                std::cout << "Connected to database" << std::endl;
+            } else {
+                std::cout << "Unable to connect to database" << std::endl;
+            }
+            sql = "select * from matches where league = 'La Liga' \
+            and season = '2015/2016' \
+            and match_began_at is not null \
+            and match_ended_at is null \
+            order by match_start_at asc limit 5";
             pqxx::nontransaction N(C);
             pqxx::result R(N.exec(sql));
             for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
@@ -268,8 +329,8 @@ public:
             std::cerr << e.what() << std::endl;
         }
     }
-
-    void update_standing(std::string points, std::string league, std::string season, std::string team) {
+    
+    void update_standing(std::string points, std::string league, std::string season, std::string team, std::string won, std::string draw, std::string lost) {
         try {
             pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
             if (C.is_open()) {
@@ -282,6 +343,9 @@ public:
             pqxx::work W(C);
 
             query = "update teams set points = points + " + points;
+            query += ", won = won + " + won;
+            query += ", draw = draw + " + draw;
+            query += ", lost = lost + " + lost;
             query += " where league = '" + league;
             query += "' and season = '" + season;
             query += "' and team = '" + team + "'";
@@ -336,6 +400,34 @@ public:
         }
     }
     
+    void start_game(std::string league, std::string season, std::string hometeam, std::string awayteam) {
+        try {
+            pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
+            if (C.is_open()) {
+                //                std::cout << "Connected to database" << std::endl;
+            } else {
+                std::cout << "Unable to connect to database" << std::endl;
+            }
+            
+            std::string query = "";
+            pqxx::work W(C);
+            
+            query = "update matches set match_began_at = now()";
+            query += " where league = '" + league;
+            query += "' and season = '" + season;
+            query += "' and hometeam = '" + hometeam;
+            query += "' and awayteam = '" + awayteam + "'";
+            std::cout << "update table matches: " << query << std::endl;
+            
+            W.exec(query);
+            W.commit();
+            C.disconnect();
+            
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+        }
+    }
+    
     void show_table(connection_hdl hdl, server::message_ptr msg) {
         msg->set_payload(table.dump());
         m_server.send(hdl, msg);
@@ -346,12 +438,18 @@ public:
         m_server.send(hdl, msg);
     }
 
+    void show_coming_matches(connection_hdl hdl, server::message_ptr msg) {
+        msg->set_payload(coming_matches.dump());
+        m_server.send(hdl, msg);
+    }
+    
 };
 
 int main(int argc, const char * argv[]) {
     print_server server;
     server.get_table();
     server.get_coming_matches();
+    server.get_matches();
     server.run(9002);
     return 0;
 }
