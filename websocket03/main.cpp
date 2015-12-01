@@ -376,20 +376,41 @@ public:
             query += " where league = '" + league;
             query += "' and season = '" + season;
             query += "' and " + venue + "team = '" + team + "'";
-            std::cout << "update table matches: " << query << std::endl;
 
             W.exec(query);
             
             if (venue == "home") {
+                // Add to goals_for to hometeam
                 query = "update teams set goals_for = goals_for + " + goal;
                 query += " where league = '" + league;
                 query += "' and season = '" + season;
                 query += "' and team = '" + hometeam + "'";
+                
+                W.exec(query);
+
+                // Add to goals_against to awayteam
+                query = "update teams set goals_against = goals_against + " + goal;
+                query += " where league = '" + league;
+                query += "' and season = '" + season;
+                query += "' and team = '" + awayteam + "'";
+                
+                W.exec(query);
             } else {
+                // Add to goals_for to awayteam
                 query = "update teams set goals_for = goals_for + " + goal;
                 query += " where league = '" + league;
                 query += "' and season = '" + season;
                 query += "' and team = '" + awayteam + "'";
+                
+                W.exec(query);
+
+                // Add to goals_against to hometeam
+                query = "update teams set goals_against = goals_against + " + goal;
+                query += " where league = '" + league;
+                query += "' and season = '" + season;
+                query += "' and team = '" + hometeam + "'";
+                
+                W.exec(query);
             }
             
             W.commit();
