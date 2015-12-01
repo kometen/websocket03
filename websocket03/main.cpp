@@ -357,7 +357,6 @@ public:
             query += " where league = '" + league;
             query += "' and season = '" + season;
             query += "' and team = '" + team + "'";
-            std::cout << "update table teams: " << query << std::endl;
 
             W.exec(query);
             W.commit();
@@ -446,7 +445,6 @@ public:
             query += "' and season = '" + season;
             query += "' and hometeam = '" + hometeam;
             query += "' and awayteam = '" + awayteam + "'";
-            std::cout << "update table matches: " << query << std::endl;
             
             W.exec(query);
             W.commit();
