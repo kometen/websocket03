@@ -249,7 +249,15 @@ public:
             pqxx::result R(N.exec(sql));
             int im = -1;
             for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
-                table["teams"] += { {"team", c[3].as<std::string>()}, {"points", c[4].as<int>()} };
+                table["teams"] += { \
+                    {"team", c[3].as<std::string>()}, \
+                    {"points", c[4].as<int>()}, \
+                    {"won", c[5].as<int>()}, \
+                    {"draw", c[6].as<int>()}, \
+                    {"lost", c[7].as<int>()}, \
+                    {"goals_for", c[8].as<int>()}, \
+                    {"goals_against", c[9].as<int>()} \
+                };
                 // Add team to unordered map to perform lookup when updating standings.
                 teams_um.emplace(c[2].as<std::string>(), ++im);
             }
