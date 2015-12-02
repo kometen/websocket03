@@ -209,13 +209,25 @@ public:
                 std::string one = "1";
                 update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"], zero, one, zero);
                 update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"], zero, one, zero);
-                start_game(jdata["league"], jdata["season"], jdata["hometeam"], jdata["awayteam"]);
+                start_match(jdata["league"], jdata["season"], jdata["hometeam"], jdata["awayteam"]);
 
                 get_table();
                 get_matches();
                 get_coming_matches();
                 for (auto it : m_connections) {
                     show_table(it, msg);
+                    show_matches(it, msg);
+                    show_coming_matches(it, msg);
+                }
+            }
+            
+            // End match
+            if (jdata["type"] == "end_match") {
+                end_match(jdata["league"], jdata["season"], jdata["hometeam"], jdata["awayteam"]);
+                
+                get_matches();
+                get_coming_matches();
+                for (auto it : m_connections) {
                     show_matches(it, msg);
                     show_coming_matches(it, msg);
                 }
@@ -428,7 +440,7 @@ public:
         }
     }
     
-    void start_game(std::string league, std::string season, std::string hometeam, std::string awayteam) {
+    void start_match(std::string league, std::string season, std::string hometeam, std::string awayteam) {
         try {
             pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
             if (C.is_open()) {
@@ -441,6 +453,33 @@ public:
             pqxx::work W(C);
             
             query = "update matches set match_began_at = now()";
+            query += " where league = '" + league;
+            query += "' and season = '" + season;
+            query += "' and hometeam = '" + hometeam;
+            query += "' and awayteam = '" + awayteam + "'";
+            
+            W.exec(query);
+            W.commit();
+            C.disconnect();
+            
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+        }
+    }
+    
+    void end_match(std::string league, std::string season, std::string hometeam, std::string awayteam) {
+        try {
+            pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
+            if (C.is_open()) {
+                //                std::cout << "Connected to database" << std::endl;
+            } else {
+                std::cout << "Unable to connect to database" << std::endl;
+            }
+            
+            std::string query = "";
+            pqxx::work W(C);
+            
+            query = "update matches set match_ended_at = now()";
             query += " where league = '" + league;
             query += "' and season = '" + season;
             query += "' and hometeam = '" + hometeam;
