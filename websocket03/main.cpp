@@ -213,7 +213,7 @@ public:
 
                 get_table();
                 get_matches();
-                get_coming_matches();
+                get_coming_matches(jdata["league"], jdata["season"]);
                 for (auto it : m_connections) {
                     show_table(it, msg);
                     show_matches(it, msg);
@@ -226,9 +226,17 @@ public:
                 end_match(jdata["league"], jdata["season"], jdata["hometeam"], jdata["awayteam"]);
                 
                 get_matches();
-                get_coming_matches();
+                get_coming_matches(jdata["league"], jdata["season"]);
                 for (auto it : m_connections) {
                     show_matches(it, msg);
+                    show_coming_matches(it, msg);
+                }
+            }
+            
+            // Get coming matches
+            if (jdata["type"] == "fetch_coming_matches") {
+                get_coming_matches(jdata["league"], jdata["season"]);
+                for (auto it : m_connections) {
                     show_coming_matches(it, msg);
                 }
             }
@@ -262,6 +270,8 @@ public:
             int im = -1;
             for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
                 table["teams"] += { \
+                    {"league", c[1].as<std::string>()}, \
+                    {"season", c[2].as<std::string>()}, \
                     {"team", c[3].as<std::string>()}, \
                     {"points", c[4].as<int>()}, \
                     {"won", c[5].as<int>()}, \
@@ -280,7 +290,7 @@ public:
         }
     }
     
-    void get_coming_matches() {
+    void get_coming_matches(std::string league, std::string season) {
         try {
             coming_matches["teams"] = { };
             pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
@@ -289,13 +299,13 @@ public:
             } else {
                 std::cout << "Unable to connect to database" << std::endl;
             }
-            sql = "select * from matches where league = 'La Liga' \
-                and season = '2015/2016' \
-                and match_began_at is null \
-                and match_ended_at is null \
-                order by match_start_at asc limit 5";
+            std::string query = "";
+            query = "select * from matches where league = '" + league + "'";
+            query += "and season = '" + season + "'";
+            query += "and match_began_at is null and match_ended_at is null";
+            query += " order by match_start_at asc limit 5";
             pqxx::nontransaction N(C);
-            pqxx::result R(N.exec(sql));
+            pqxx::result R(N.exec(query));
             for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
                 coming_matches["teams"] += { \
                     {"id", c[0].as<int>()}, \
@@ -514,7 +524,7 @@ public:
 int main(int argc, const char * argv[]) {
     print_server server;
     server.get_table();
-    server.get_coming_matches();
+    server.get_coming_matches("La Liga", "2015/2016");
     server.get_matches();
     server.run(9002);
     return 0;
