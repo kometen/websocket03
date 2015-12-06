@@ -252,6 +252,19 @@ public:
                     show_matches_without_startdate(it, msg);
                 }
             }
+
+            // Set matchdate
+            if (jdata["type"] == "set_match_date") {
+                set_matchdate(jdata["id"], jdata["league"], jdata["season"], jdata["hometeam"], jdata["awayteam"], jdata["match_start_at"]);
+                get_matches_without_startdate(jdata["league"], jdata["season"]);
+                for (auto it : m_connections) {
+                    show_matches_without_startdate(it, msg);
+                }
+                get_coming_matches(jdata["league"], jdata["season"]);
+                for (auto it : m_connections) {
+                    show_coming_matches(it, msg);
+                }
+            }
             
             
         } catch (const std::exception& e) {
@@ -337,6 +350,34 @@ public:
         }
     }
 
+    void set_matchdate(unsigned int id, std::string league, std::string season, std::string hometeam, std::string awayteam, std::string match_start_at) {
+        try {
+            pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
+            if (C.is_open()) {
+                //std::cout << "Connected to database" << std::endl;
+            } else {
+                std::cout << "Unable to connect to database" << std::endl;
+            }
+            std::string query = "";
+            pqxx::work W(C);
+            
+            query = "update matches set match_start_at = '" + match_start_at + "'";
+            query += " where league = '" + league + "'";
+            query += " and season = '" + season + "'";
+            query += " and hometeam = '" + hometeam + "'";
+            query += " and awayteam = '" + awayteam + "'";
+            
+            std::cout << "update match with date: " << query << std::endl;
+            
+            W.exec(query);
+            W.commit();
+            C.disconnect();
+            
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+        }
+    }
+    
     void get_matches_without_startdate(std::string league, std::string season) {
         try {
             matches_without_startdate["teams"] = { };
