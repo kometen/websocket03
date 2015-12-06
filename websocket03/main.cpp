@@ -58,6 +58,7 @@ private:
     nlohmann::json table;
     nlohmann::json matches;
     nlohmann::json coming_matches;
+    nlohmann::json matches_without_startdate;
     std::unordered_map<std::string, unsigned int> teams_um;
     typedef std::set<connection_hdl, std::owner_less<connection_hdl>> con_list;
     con_list m_connections;
@@ -80,6 +81,9 @@ public:
         
         coming_matches["type"] = "coming_matches";
         coming_matches["teams"] = { };
+        
+        matches_without_startdate["type"] = "matches_without_startdate";
+        matches_without_startdate["teams"] = { };
         
     }
     
@@ -241,6 +245,14 @@ public:
                 }
             }
             
+            // Get matches with no startdate
+            if (jdata["type"] == "fetch_matches_without_startdate") {
+                get_matches_without_startdate(jdata["league"], jdata["season"]);
+                for (auto it : m_connections) {
+                    show_matches_without_startdate(it, msg);
+                }
+            }
+            
             
         } catch (const std::exception& e) {
             msg->set_payload("Unable to parse json");
@@ -301,8 +313,8 @@ public:
             }
             std::string query = "";
             query = "select * from matches where league = '" + league + "'";
-            query += "and season = '" + season + "'";
-            query += "and match_began_at is null and match_ended_at is null";
+            query += " and season = '" + season + "'";
+            query += " and match_start_at is not null and match_began_at is null and match_ended_at is null";
             query += " order by match_start_at asc limit 5";
             pqxx::nontransaction N(C);
             pqxx::result R(N.exec(query));
@@ -325,6 +337,38 @@ public:
         }
     }
 
+    void get_matches_without_startdate(std::string league, std::string season) {
+        try {
+            matches_without_startdate["teams"] = { };
+            pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
+            if (C.is_open()) {
+                std::cout << "Connected to database" << std::endl;
+            } else {
+                std::cout << "Unable to connect to database" << std::endl;
+            }
+            std::string query = "";
+            query = "select * from matches where league = '" + league + "'";
+            query += " and season = '" + season + "'";
+            query += " and match_start_at is null and match_began_at is null and match_ended_at is null";
+            query += " order by hometeam, awayteam";
+            pqxx::nontransaction N(C);
+            pqxx::result R(N.exec(query));
+            for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
+                matches_without_startdate["teams"] += { \
+                    {"id", c[0].as<int>()}, \
+                    {"league", c[1].as<std::string>()}, \
+                    {"season", c[2].as<std::string>()}, \
+                    {"hometeam", c[3].as<std::string>()}, \
+                    {"awayteam", c[4].as<std::string>()} \
+                };
+            }
+            C.disconnect();
+            
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+        }
+    }
+    
     void get_matches() {
         try {
             matches["teams"] = { };
@@ -516,6 +560,11 @@ public:
 
     void show_coming_matches(connection_hdl hdl, server::message_ptr msg) {
         msg->set_payload(coming_matches.dump());
+        m_server.send(hdl, msg);
+    }
+    
+    void show_matches_without_startdate(connection_hdl hdl, server::message_ptr msg) {
+        msg->set_payload(matches_without_startdate.dump());
         m_server.send(hdl, msg);
     }
     
