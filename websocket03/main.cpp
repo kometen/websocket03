@@ -55,10 +55,13 @@ private:
     int connections = 0;
     unsigned int m_next_session_id;
     server m_server;
+    
     nlohmann::json table;
     nlohmann::json matches;
     nlohmann::json coming_matches;
+    nlohmann::json finished_matches;
     nlohmann::json matches_without_startdate;
+    
     std::unordered_map<std::string, unsigned int> teams_um;
     typedef std::set<connection_hdl, std::owner_less<connection_hdl>> con_list;
     con_list m_connections;
@@ -81,6 +84,9 @@ public:
         
         coming_matches["type"] = "coming_matches";
         coming_matches["teams"] = { };
+        
+        finished_matches["type"] = "finished_matches";
+        finished_matches["teams"] = { };
         
         matches_without_startdate["type"] = "matches_without_startdate";
         matches_without_startdate["teams"] = { };
@@ -134,6 +140,7 @@ public:
             if (jdata["type"] == "request") {
                 show_table(hdl, msg);
                 show_matches(hdl, msg);
+                show_finished_matches(hdl, msg);
                 show_coming_matches(hdl, msg);
             }
             
@@ -231,22 +238,32 @@ public:
                 
                 get_matches();
                 get_coming_matches(jdata["league"], jdata["season"]);
+                get_finished_matches(jdata["league"], jdata["season"]);
                 for (auto it : m_connections) {
                     show_matches(it, msg);
                     show_coming_matches(it, msg);
+                    show_finished_matches(it, msg);
                 }
             }
             
             // Get coming matches
-            if (jdata["type"] == "fetch_coming_matches") {
+            if (jdata["type"] == "get_coming_matches") {
                 get_coming_matches(jdata["league"], jdata["season"]);
                 for (auto it : m_connections) {
                     show_coming_matches(it, msg);
                 }
             }
             
+            // Get finished matches
+            if (jdata["type"] == "get_finished_matches") {
+                get_finished_matches(jdata["league"], jdata["season"]);
+                for (auto it : m_connections) {
+                    show_finished_matches(it, msg);
+                }
+            }
+            
             // Get matches with no startdate
-            if (jdata["type"] == "fetch_matches_without_startdate") {
+            if (jdata["type"] == "get_matches_without_startdate") {
                 get_matches_without_startdate(jdata["league"], jdata["season"]);
                 for (auto it : m_connections) {
                     show_matches_without_startdate(it, msg);
@@ -320,7 +337,7 @@ public:
             coming_matches["teams"] = { };
             pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
             if (C.is_open()) {
-                std::cout << "Connected to database" << std::endl;
+                //std::cout << "Connected to database" << std::endl;
             } else {
                 std::cout << "Unable to connect to database" << std::endl;
             }
@@ -350,6 +367,41 @@ public:
         }
     }
 
+    void get_finished_matches(std::string league, std::string season) {
+        try {
+            finished_matches["teams"] = { };
+            pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
+            if (C.is_open()) {
+                //std::cout << "Connected to database" << std::endl;
+            } else {
+                std::cout << "Unable to connect to database" << std::endl;
+            }
+            std::string query = "";
+            query = "select * from matches where league = '" + league + "'";
+            query += " and season = '" + season + "'";
+            query += " and match_start_at is not null and match_began_at is not null and match_ended_at is not null";
+            query += " order by match_ended_at desc limit 5";
+            pqxx::nontransaction N(C);
+            pqxx::result R(N.exec(query));
+            for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
+                finished_matches["teams"] += { \
+                    {"id", c[0].as<int>()}, \
+                    {"league", c[1].as<std::string>()}, \
+                    {"season", c[2].as<std::string>()}, \
+                    {"hometeam", c[3].as<std::string>()}, \
+                    {"awayteam", c[4].as<std::string>()}, \
+                    {"match_start_at", c[5].as<std::string>()}, \
+                    {"hometeam_score", c[8].as<int>()}, \
+                    {"awayteam_score", c[9].as<int>()} \
+                };
+            }
+            C.disconnect();
+            
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+        }
+    }
+    
     void set_matchdate(unsigned int id, std::string league, std::string season, std::string hometeam, std::string awayteam, std::string match_start_at) {
         try {
             pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
@@ -383,7 +435,7 @@ public:
             matches_without_startdate["teams"] = { };
             pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
             if (C.is_open()) {
-                std::cout << "Connected to database" << std::endl;
+                //std::cout << "Connected to database" << std::endl;
             } else {
                 std::cout << "Unable to connect to database" << std::endl;
             }
@@ -415,7 +467,7 @@ public:
             matches["teams"] = { };
             pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
             if (C.is_open()) {
-                std::cout << "Connected to database" << std::endl;
+                //std::cout << "Connected to database" << std::endl;
             } else {
                 std::cout << "Unable to connect to database" << std::endl;
             }
@@ -449,7 +501,7 @@ public:
         try {
             pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
             if (C.is_open()) {
-//                std::cout << "Connected to database" << std::endl;
+                //std::cout << "Connected to database" << std::endl;
             } else {
                 std::cout << "Unable to connect to database" << std::endl;
             }
@@ -478,7 +530,7 @@ public:
         try {
             pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
             if (C.is_open()) {
-                //                std::cout << "Connected to database" << std::endl;
+                //std::cout << "Connected to database" << std::endl;
             } else {
                 std::cout << "Unable to connect to database" << std::endl;
             }
@@ -539,7 +591,7 @@ public:
         try {
             pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
             if (C.is_open()) {
-                //                std::cout << "Connected to database" << std::endl;
+                //std::cout << "Connected to database" << std::endl;
             } else {
                 std::cout << "Unable to connect to database" << std::endl;
             }
@@ -566,7 +618,7 @@ public:
         try {
             pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
             if (C.is_open()) {
-                //                std::cout << "Connected to database" << std::endl;
+                //std::cout << "Connected to database" << std::endl;
             } else {
                 std::cout << "Unable to connect to database" << std::endl;
             }
@@ -604,6 +656,11 @@ public:
         m_server.send(hdl, msg);
     }
     
+    void show_finished_matches(connection_hdl hdl, server::message_ptr msg) {
+        msg->set_payload(finished_matches.dump());
+        m_server.send(hdl, msg);
+    }
+    
     void show_matches_without_startdate(connection_hdl hdl, server::message_ptr msg) {
         msg->set_payload(matches_without_startdate.dump());
         m_server.send(hdl, msg);
@@ -616,6 +673,7 @@ int main(int argc, const char * argv[]) {
     server.get_table();
     server.get_coming_matches("La Liga", "2015/2016");
     server.get_matches();
+    server.get_finished_matches("La Liga", "2015/2016");
     server.run(9002);
     return 0;
 }
