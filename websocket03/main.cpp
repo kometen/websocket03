@@ -475,7 +475,7 @@ public:
             and season = '2015/2016' \
             and match_began_at is not null \
             and match_ended_at is null \
-            order by match_start_at asc limit 5";
+            order by match_start_at asc, id";
             pqxx::nontransaction N(C);
             pqxx::result R(N.exec(sql));
             for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
@@ -541,7 +541,8 @@ public:
             query = "update matches set " + venue + "team_score = " + venue + "team_score + " + goal;
             query += " where league = '" + league;
             query += "' and season = '" + season;
-            query += "' and " + venue + "team = '" + team + "'";
+            query += "' and hometeam = '" + hometeam;
+            query += "' and awayteam = '" + awayteam + "'";
 
             W.exec(query);
             
