@@ -166,6 +166,8 @@ public:
             if (jdata["type"] == "goal") {
                 unsigned int hts = jdata["hometeam_score"];
                 unsigned int ats = jdata["awayteam_score"];
+                int goal = jdata["goal"];
+                std::string sgoal = std::to_string(goal);
                 std::string minusone = "-1";
                 std::string minustwo = "-2";
                 std::string zero = "0";
@@ -201,9 +203,9 @@ public:
 
                 // Add goal to matches- and teams-table.
                 if (jdata["scoringteam"] == "hometeam") {
-                    update_goalscore(jdata["league"], jdata["season"], jdata["hometeam"], "home", "1", jdata["hometeam"], jdata["awayteam"]);
+                    update_goalscore(jdata["league"], jdata["season"], jdata["hometeam"], "home", sgoal, jdata["hometeam"], jdata["awayteam"]);
                 } else {
-                    update_goalscore(jdata["league"], jdata["season"], jdata["awayteam"], "away", "1", jdata["hometeam"], jdata["awayteam"]);
+                    update_goalscore(jdata["league"], jdata["season"], jdata["awayteam"], "away", sgoal, jdata["hometeam"], jdata["awayteam"]);
                 }
 
                 get_table();
@@ -212,6 +214,64 @@ public:
                     show_table(it, msg);
                     show_matches(it, msg);
                 }
+            }
+            
+            // Goal canceled
+            if (jdata["type"] == "cancelgoal") {
+                unsigned int hts = jdata["hometeam_score"];
+                unsigned int ats = jdata["awayteam_score"];
+                int goal = jdata["goal"];
+                std::string sgoal = std::to_string(goal);
+                std::string minusone = "-1";
+                std::string minustwo = "-2";
+                std::string zero = "0";
+                std::string one = "1";
+                std::string two = "2";
+                
+                // Don't cancel goal if score is zero.
+                if ((jdata["scoringteam"] == "hometeam" && hts > 0) || (jdata["scoringteam"] == "awayteam" && ats > 0)) {
+                    // If it was equal score and hometeam have a goal cancelled. Shuffle points.
+                    if (hts == ats && jdata["scoringteam"] == "hometeam") {
+                        // Subtract one point from the hometeam. And add two to the awayteam.
+                        update_standing(minusone, jdata["league"], jdata["season"], jdata["hometeam"], zero, minusone, one);
+                        update_standing(two, jdata["league"], jdata["season"], jdata["awayteam"], one, minusone, zero);
+                    }
+                    // If it was equal score and awayteam have a goal cancellled. Shuffle points.
+                    if (hts == ats && jdata["scoringteam"] == "awayteam") {
+                        // Add two points to the hometeam and subtract one from the awayteam.
+                        update_standing(two, jdata["league"], jdata["season"], jdata["hometeam"], one, minusone, zero);
+                        update_standing(minusone, jdata["league"], jdata["season"], jdata["awayteam"], zero, minusone, one);
+                    }
+                    
+                    // If hometeam is up by one and goal is cancelled shuffle points.
+                    if ((hts - ats) == 1 && jdata["scoringteam"] == "hometeam") {
+                        // Subtract two points from hometeam and add one point to awayteam.
+                        update_standing(minustwo, jdata["league"], jdata["season"], jdata["hometeam"], minusone, one, zero);
+                        update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"], zero, one, minusone);
+                    }
+                    
+                    // If awayteam is up by one and goal is cancelled shuffle points.
+                    if ((hts - ats) == -1 && jdata["scoringteam"] == "awayteam") {
+                        // Add one point to hometeam and subtract two points from awayteam.
+                        update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"], zero, one, minusone);
+                        update_standing(minustwo, jdata["league"], jdata["season"], jdata["awayteam"], minusone, one, zero);
+                    }
+                    
+                    // Remove goal to matches- and teams-table.
+                    if (jdata["scoringteam"] == "hometeam") {
+                        update_goalscore(jdata["league"], jdata["season"], jdata["hometeam"], "home", sgoal, jdata["hometeam"], jdata["awayteam"]);
+                    } else {
+                        update_goalscore(jdata["league"], jdata["season"], jdata["awayteam"], "away", sgoal, jdata["hometeam"], jdata["awayteam"]);
+                    }
+                    
+                    get_table();
+                    get_matches();
+                    for (auto it : m_connections) {
+                        show_table(it, msg);
+                        show_matches(it, msg);
+                    }
+                }
+                
             }
             
             // Start match
