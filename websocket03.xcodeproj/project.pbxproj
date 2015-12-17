@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		484845B71C234FD700E60EA4 /* libz.1.2.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 484845B61C234FD700E60EA4 /* libz.1.2.8.dylib */; };
 		487FBB4D1BF230610041D05A /* libpqxx-4.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 487FBB4C1BF230610041D05A /* libpqxx-4.0.dylib */; };
 		48F6557B1BD77CA400A0B981 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 48F6557A1BD77CA400A0B981 /* main.cpp */; };
 		48F655821BD7850100A0B981 /* libboost_system-mt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 48F655811BD7850100A0B981 /* libboost_system-mt.dylib */; };
@@ -26,6 +27,7 @@
 
 /* Begin PBXFileReference section */
 		480C48821BDC3D1600A28A3E /* README */ = {isa = PBXFileReference; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
+		484845B61C234FD700E60EA4 /* libz.1.2.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.1.2.8.dylib; path = ../../../../../opt/local/lib/libz.1.2.8.dylib; sourceTree = "<group>"; };
 		487FBB4C1BF230610041D05A /* libpqxx-4.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libpqxx-4.0.dylib"; path = "../../../../../opt/local/lib/libpqxx-4.0.dylib"; sourceTree = "<group>"; };
 		48F655771BD77CA400A0B981 /* websocket03 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = websocket03; sourceTree = BUILT_PRODUCTS_DIR; };
 		48F6557A1BD77CA400A0B981 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
@@ -37,6 +39,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				484845B71C234FD700E60EA4 /* libz.1.2.8.dylib in Frameworks */,
 				487FBB4D1BF230610041D05A /* libpqxx-4.0.dylib in Frameworks */,
 				48F655821BD7850100A0B981 /* libboost_system-mt.dylib in Frameworks */,
 			);
@@ -48,6 +51,7 @@
 		48F6556E1BD77CA400A0B981 = {
 			isa = PBXGroup;
 			children = (
+				484845B61C234FD700E60EA4 /* libz.1.2.8.dylib */,
 				487FBB4C1BF230610041D05A /* libpqxx-4.0.dylib */,
 				480C48821BDC3D1600A28A3E /* README */,
 				48F655811BD7850100A0B981 /* libboost_system-mt.dylib */,
