@@ -109,7 +109,7 @@ nlohmann::json Database::get_finished_matches(const nlohmann::json json) {
         std::string query = "select * from matches where league = '" + league + "'";
         query += " and season = '" + season + "'";
         query += " and match_start_at is not null and match_began_at is not null and match_ended_at is not null";
-        query += " order by match_ended_at desc limit 5";
+        query += " order by match_ended_at desc limit 10";
         pqxx::nontransaction N(C);
         pqxx::result R(N.exec(query));
         for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
@@ -152,7 +152,7 @@ nlohmann::json Database::get_coming_matches(const nlohmann::json json) {
         std::string query = "select * from matches where league = '" + league + "'";
         query += " and season = '" + season + "'";
         query += " and match_start_at is not null and match_began_at is null and match_ended_at is null";
-        query += " order by match_start_at asc limit 5";
+        query += " order by match_start_at, hometeam limit 10";
         pqxx::nontransaction N(C);
         pqxx::result R(N.exec(query));
         for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
