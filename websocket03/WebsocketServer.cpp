@@ -8,31 +8,6 @@
 
 #include "WebsocketServer.hpp"
 
-void show_table(connection_hdl hdl, server::message_ptr msg) {
-    msg->set_payload(table.dump());
-    m_server.send(hdl, msg);
-}
-
-void show_matches(connection_hdl hdl, server::message_ptr msg) {
-    msg->set_payload(matches.dump());
-    m_server.send(hdl, msg);
-}
-
-void show_coming_matches(connection_hdl hdl, server::message_ptr msg) {
-    msg->set_payload(coming_matches.dump());
-    m_server.send(hdl, msg);
-}
-
-void show_finished_matches(connection_hdl hdl, server::message_ptr msg) {
-    msg->set_payload(finished_matches.dump());
-    m_server.send(hdl, msg);
-}
-
-void show_matches_without_startdate(connection_hdl hdl, server::message_ptr msg) {
-    msg->set_payload(matches_without_startdate.dump());
-    m_server.send(hdl, msg);
-}
-
 void WebsocketServer::on_open(connection_hdl hdl) {
     connection_ptr con = m_server.get_con_from_hdl(hdl);
     
@@ -79,14 +54,38 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg) {
         
         // Show table
         if (jdata["type"] == "get table") {
-            show_table(hdl, msg);
-            show_matches(hdl, msg);
-            show_finished_matches(hdl, msg);
-            show_coming_matches(hdl, msg);
+            nlohmann::json message;
+
+            // Get table
+            message.clear();
+            message = database.get_table(jdata);
+            msg->set_payload(message.dump());
+            m_server.send(hdl, msg);
+            
+            // Get matches
+            message.clear();
+            message = database.get_matches(jdata);
+            msg->set_payload(message.dump());
+            m_server.send(hdl, msg);
+            
+            // Get finished matches
+            message.clear();
+            message = database.get_finished_matches(jdata);
+            msg->set_payload(message.dump());
+            m_server.send(hdl, msg);
+            
+            // Get coming matches
+            message.clear();
+            message = database.get_coming_matches(jdata);
+            msg->set_payload(message.dump());
+            m_server.send(hdl, msg);
         }
         
         // Goal scored
         if (jdata["type"] == "goal") {
+            nlohmann::json table;
+            nlohmann::json matches;
+            
             unsigned int hts = jdata["hometeam_score"];
             unsigned int ats = jdata["awayteam_score"];
             int goal = jdata["goal"];
@@ -131,16 +130,29 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg) {
                 database.update_goalscore(jdata["league"], jdata["season"], jdata["awayteam"], "away", sgoal, jdata["hometeam"], jdata["awayteam"]);
             }
             
-            get_table();
-            get_matches();
+            // Get table
+            table.clear();
+            table = database.get_table(jdata);
+
+            // Get matches
+            matches.clear();
+            matches = database.get_matches(jdata);
+            
+            // Broadcast to clients
             for (auto it : m_connections) {
-                show_table(it, msg);
-                show_matches(it, msg);
+                msg->set_payload(table.dump());
+                m_server.send(it, msg);
+                
+                msg->set_payload(matches.dump());
+                m_server.send(it, msg);
             }
         }
         
         // Goal canceled
         if (jdata["type"] == "cancelgoal") {
+            nlohmann::json table;
+            nlohmann::json matches;
+            
             unsigned int hts = jdata["hometeam_score"];
             unsigned int ats = jdata["awayteam_score"];
             int goal = jdata["goal"];
@@ -156,42 +168,52 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg) {
                 // If it was equal score and hometeam have a goal cancelled. Shuffle points.
                 if (hts == ats && jdata["scoringteam"] == "hometeam") {
                     // Subtract one point from the hometeam. And add two to the awayteam.
-                    update_standing(minusone, jdata["league"], jdata["season"], jdata["hometeam"], zero, minusone, one);
-                    update_standing(two, jdata["league"], jdata["season"], jdata["awayteam"], one, minusone, zero);
+                    database.update_standing(minusone, jdata["league"], jdata["season"], jdata["hometeam"], zero, minusone, one);
+                    database.update_standing(two, jdata["league"], jdata["season"], jdata["awayteam"], one, minusone, zero);
                 }
                 // If it was equal score and awayteam have a goal cancellled. Shuffle points.
                 if (hts == ats && jdata["scoringteam"] == "awayteam") {
                     // Add two points to the hometeam and subtract one from the awayteam.
-                    update_standing(two, jdata["league"], jdata["season"], jdata["hometeam"], one, minusone, zero);
-                    update_standing(minusone, jdata["league"], jdata["season"], jdata["awayteam"], zero, minusone, one);
+                    database.update_standing(two, jdata["league"], jdata["season"], jdata["hometeam"], one, minusone, zero);
+                    database.update_standing(minusone, jdata["league"], jdata["season"], jdata["awayteam"], zero, minusone, one);
                 }
                 
                 // If hometeam is up by one and goal is cancelled shuffle points.
                 if ((hts - ats) == 1 && jdata["scoringteam"] == "hometeam") {
                     // Subtract two points from hometeam and add one point to awayteam.
-                    update_standing(minustwo, jdata["league"], jdata["season"], jdata["hometeam"], minusone, one, zero);
-                    update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"], zero, one, minusone);
+                    database.update_standing(minustwo, jdata["league"], jdata["season"], jdata["hometeam"], minusone, one, zero);
+                    database.update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"], zero, one, minusone);
                 }
                 
                 // If awayteam is up by one and goal is cancelled shuffle points.
                 if ((hts - ats) == -1 && jdata["scoringteam"] == "awayteam") {
                     // Add one point to hometeam and subtract two points from awayteam.
-                    update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"], zero, one, minusone);
-                    update_standing(minustwo, jdata["league"], jdata["season"], jdata["awayteam"], minusone, one, zero);
+                    database.update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"], zero, one, minusone);
+                    database.update_standing(minustwo, jdata["league"], jdata["season"], jdata["awayteam"], minusone, one, zero);
                 }
                 
                 // Remove goal to matches- and teams-table.
                 if (jdata["scoringteam"] == "hometeam") {
-                    update_goalscore(jdata["league"], jdata["season"], jdata["hometeam"], "home", sgoal, jdata["hometeam"], jdata["awayteam"]);
+                    database.update_goalscore(jdata["league"], jdata["season"], jdata["hometeam"], "home", sgoal, jdata["hometeam"], jdata["awayteam"]);
                 } else {
-                    update_goalscore(jdata["league"], jdata["season"], jdata["awayteam"], "away", sgoal, jdata["hometeam"], jdata["awayteam"]);
+                    database.update_goalscore(jdata["league"], jdata["season"], jdata["awayteam"], "away", sgoal, jdata["hometeam"], jdata["awayteam"]);
                 }
                 
-                get_table();
-                get_matches();
+                // Get table
+                table.clear();
+                table = database.get_table(jdata);
+                
+                // Get matches
+                matches.clear();
+                matches = database.get_matches(jdata);
+                
+                // Broadcast to clients
                 for (auto it : m_connections) {
-                    show_table(it, msg);
-                    show_matches(it, msg);
+                    msg->set_payload(table.dump());
+                    m_server.send(it, msg);
+                    
+                    msg->set_payload(matches.dump());
+                    m_server.send(it, msg);
                 }
             }
             
@@ -199,70 +221,135 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg) {
         
         // Start match
         if (jdata["type"] == "start_match") {
+            nlohmann::json table;
+            nlohmann::json matches;
+            nlohmann::json coming_matches;
+            
             std::string zero = "0";
             std::string one = "1";
-            update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"], zero, one, zero);
-            update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"], zero, one, zero);
-            start_match(jdata["league"], jdata["season"], jdata["hometeam"], jdata["awayteam"]);
+            database.update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"], zero, one, zero);
+            database.update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"], zero, one, zero);
+            database.start_match(jdata["league"], jdata["season"], jdata["hometeam"], jdata["awayteam"]);
             
-            get_table();
-            get_matches();
-            get_coming_matches(jdata["league"], jdata["season"]);
+            // Get table
+            table.clear();
+            table = database.get_table(jdata);
+            
+            // Get matches
+            matches.clear();
+            matches = database.get_matches(jdata);
+            
+            // Get coming matches
+            coming_matches.clear();
+            coming_matches = database.get_coming_matches(jdata);
+            
+            // Broadcast to clients
             for (auto it : m_connections) {
-                show_table(it, msg);
-                show_matches(it, msg);
-                show_coming_matches(it, msg);
+                msg->set_payload(table.dump());
+                m_server.send(it, msg);
+                
+                msg->set_payload(matches.dump());
+                m_server.send(it, msg);
+
+                msg->set_payload(coming_matches.dump());
+                m_server.send(it, msg);
             }
         }
         
         // End match
         if (jdata["type"] == "end_match") {
-            end_match(jdata["league"], jdata["season"], jdata["hometeam"], jdata["awayteam"]);
+            nlohmann::json matches;
+            nlohmann::json coming_matches;
+            nlohmann::json finished_matches;
             
-            get_matches();
-            get_coming_matches(jdata["league"], jdata["season"]);
-            get_finished_matches(jdata["league"], jdata["season"]);
+            database.end_match(jdata["league"], jdata["season"], jdata["hometeam"], jdata["awayteam"]);
+            
+            // Get matches
+            matches.clear();
+            matches = database.get_matches(jdata);
+            
+            // Get coming matches
+            coming_matches.clear();
+            coming_matches = database.get_coming_matches(jdata);
+            
+            // Get finished matches
+            finished_matches.clear();
+            finished_matches = database.get_finished_matches(jdata);
+            
+            // Broadcast to clients
             for (auto it : m_connections) {
-                show_matches(it, msg);
-                show_coming_matches(it, msg);
-                show_finished_matches(it, msg);
+                msg->set_payload(matches.dump());
+                m_server.send(it, msg);
+                
+                msg->set_payload(coming_matches.dump());
+                m_server.send(it, msg);
+                
+                msg->set_payload(finished_matches.dump());
+                m_server.send(it, msg);
             }
         }
         
         // Get coming matches
         if (jdata["type"] == "get_coming_matches") {
-            get_coming_matches(jdata["league"], jdata["season"]);
+            nlohmann::json message;
+
+            message.clear();
+            message = database.get_coming_matches(jdata);
+            
+            msg->set_payload(message.dump());
             for (auto it : m_connections) {
-                show_coming_matches(it, msg);
+                m_server.send(it, msg);
             }
         }
         
         // Get finished matches
         if (jdata["type"] == "get_finished_matches") {
-            get_finished_matches(jdata["league"], jdata["season"]);
+            nlohmann::json message;
+            
+            message.clear();
+            message = database.get_finished_matches(jdata);
+            
+            msg->set_payload(message.dump());
             for (auto it : m_connections) {
-                show_finished_matches(it, msg);
+                m_server.send(it, msg);
             }
         }
         
         // Get matches with no startdate
         if (jdata["type"] == "get_matches_without_startdate") {
-            get_matches_without_startdate(jdata["league"], jdata["season"]);
+            nlohmann::json message;
+            
+            message.clear();
+            message = database.get_matches_without_startdate(jdata);
+            
+            msg->set_payload(message.dump());
             for (auto it : m_connections) {
-                show_matches_without_startdate(it, msg);
+                m_server.send(it, msg);
             }
         }
         
         // Set matchdate
         if (jdata["type"] == "set_match_date") {
-            set_matchdate(jdata["id"], jdata["league"], jdata["season"], jdata["hometeam"], jdata["awayteam"], jdata["match_start_at"]);
-            get_matches_without_startdate(jdata["league"], jdata["season"]);
+            nlohmann::json matches_without_startdate;
+            nlohmann::json coming_matches;
+            
+            database.set_matchdate(jdata["id"], jdata["league"], jdata["season"], jdata["hometeam"], jdata["awayteam"], jdata["match_start_at"]);
+
+            // Get matches without startdate
+            matches_without_startdate.clear();
+            matches_without_startdate = database.get_matches_without_startdate(jdata);
+            
+            // Get coming matches
+            coming_matches.clear();
+            coming_matches = database.get_coming_matches(jdata);
+            
+            // Broadcast to clients
             for (auto it : m_connections) {
-                show_matches_without_startdate(it, msg);
-            }
-            get_coming_matches(jdata["league"], jdata["season"]);
-            for (auto it : m_connections) {
-                show_coming_matches(it, msg);
+                msg->set_payload(matches_without_startdate.dump());
+                m_server.send(it, msg);
+                
+                msg->set_payload(coming_matches.dump());
+                m_server.send(it, msg);
             }
         }
         

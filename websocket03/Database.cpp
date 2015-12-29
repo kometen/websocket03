@@ -8,16 +8,22 @@
 
 #include "Database.hpp"
 
-void Database::get_table() {
+nlohmann::json Database::get_table(const nlohmann::json json) {
+    std::string league = json["league"];
+    std::string season = json["season"];
+    
+    nlohmann::json table;
+    table["teams"] = { };
+    table["type"] = "table";
+
     try {
-        table["teams"] = { };
         pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
         if (C.is_open()) {
             std::cout << "Connected to database" << std::endl;
         } else {
             std::cout << "Unable to connect to database" << std::endl;
         }
-        std::string query = "select * from teams where league = 'La Liga' and season = '2015/2016'";
+        std::string query = "select * from teams where league = '" + league + "' and season = '" + season + "'";
         pqxx::nontransaction N(C);
         pqxx::result R(N.exec(query));
         for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
@@ -34,30 +40,37 @@ void Database::get_table() {
             };
         }
         C.disconnect();
-        
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
     }
+    
+    return table;
 }
 
-void Database::get_coming_matches(std::string league, std::string season) {
+nlohmann::json Database::get_matches(const nlohmann::json json) {
+    std::string league = json["league"];
+    std::string season = json["season"];
+    
+    nlohmann::json table;
+    table["matches"] = { };
+    table["type"] = "matches";
+
     try {
-        coming_matches["teams"] = { };
         pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
         if (C.is_open()) {
             //std::cout << "Connected to database" << std::endl;
         } else {
             std::cout << "Unable to connect to database" << std::endl;
         }
-        std::string query = "";
-        query = "select * from matches where league = '" + league + "'";
-        query += " and season = '" + season + "'";
-        query += " and match_start_at is not null and match_began_at is null and match_ended_at is null";
-        query += " order by match_start_at asc limit 5";
+        std::string query = "select * from matches where league = '" + league + "' \
+        and season = '" + season + "' \
+        and match_began_at is not null \
+        and match_ended_at is null \
+        order by match_start_at asc, id";
         pqxx::nontransaction N(C);
         pqxx::result R(N.exec(query));
         for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
-            coming_matches["teams"] += { \
+            table["teams"] += { \
                 {"id", c[0].as<int>()}, \
                 {"league", c[1].as<std::string>()}, \
                 {"season", c[2].as<std::string>()}, \
@@ -73,26 +86,34 @@ void Database::get_coming_matches(std::string league, std::string season) {
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
     }
+    
+    return table;
 }
 
-void Database::get_finished_matches(std::string league, std::string season) {
+nlohmann::json Database::get_finished_matches(const nlohmann::json json) {
+    std::string league = json["league"];
+    std::string season = json["season"];
+
+    nlohmann::json table;
+    table["matches"] = { };
+    table["type"] = "finished_matches";
+    
     try {
-        finished_matches["teams"] = { };
+        table["teams"] = { };
         pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
         if (C.is_open()) {
             //std::cout << "Connected to database" << std::endl;
         } else {
             std::cout << "Unable to connect to database" << std::endl;
         }
-        std::string query = "";
-        query = "select * from matches where league = '" + league + "'";
+        std::string query = "select * from matches where league = '" + league + "'";
         query += " and season = '" + season + "'";
         query += " and match_start_at is not null and match_began_at is not null and match_ended_at is not null";
         query += " order by match_ended_at desc limit 5";
         pqxx::nontransaction N(C);
         pqxx::result R(N.exec(query));
         for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
-            finished_matches["teams"] += { \
+            table["teams"] += { \
                 {"id", c[0].as<int>()}, \
                 {"league", c[1].as<std::string>()}, \
                 {"season", c[2].as<std::string>()}, \
@@ -108,6 +129,90 @@ void Database::get_finished_matches(std::string league, std::string season) {
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
     }
+    
+    return table;
+}
+
+nlohmann::json Database::get_coming_matches(const nlohmann::json json) {
+    std::string league = json["league"];
+    std::string season = json["season"];
+    
+    nlohmann::json table;
+    table["matches"] = { };
+    table["type"] = "coming_matches";
+    
+    try {
+        table["teams"] = { };
+        pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
+        if (C.is_open()) {
+            //std::cout << "Connected to database" << std::endl;
+        } else {
+            std::cout << "Unable to connect to database" << std::endl;
+        }
+        std::string query = "select * from matches where league = '" + league + "'";
+        query += " and season = '" + season + "'";
+        query += " and match_start_at is not null and match_began_at is null and match_ended_at is null";
+        query += " order by match_start_at asc limit 5";
+        pqxx::nontransaction N(C);
+        pqxx::result R(N.exec(query));
+        for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
+            table["teams"] += { \
+                {"id", c[0].as<int>()}, \
+                {"league", c[1].as<std::string>()}, \
+                {"season", c[2].as<std::string>()}, \
+                {"hometeam", c[3].as<std::string>()}, \
+                {"awayteam", c[4].as<std::string>()}, \
+                {"match_start_at", c[5].as<std::string>()}, \
+                {"hometeam_score", c[8].as<int>()}, \
+                {"awayteam_score", c[9].as<int>()} \
+            };
+        }
+        C.disconnect();
+        
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+    }
+    
+    return table;
+}
+
+nlohmann::json Database::get_matches_without_startdate(const nlohmann::json json) {
+    std::string league = json["league"];
+    std::string season = json["season"];
+    
+    nlohmann::json table;
+    table["teams"] = { };
+    table["type"] = "matches_without_startdate";
+    
+    try {
+        pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
+        if (C.is_open()) {
+            //std::cout << "Connected to database" << std::endl;
+        } else {
+            std::cout << "Unable to connect to database" << std::endl;
+        }
+        std::string query = "select * from matches where league = '" + league + "'";
+        query += " and season = '" + season + "'";
+        query += " and match_start_at is null and match_began_at is null and match_ended_at is null";
+        query += " order by hometeam, awayteam";
+        pqxx::nontransaction N(C);
+        pqxx::result R(N.exec(query));
+        for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
+            table["teams"] += { \
+                {"id", c[0].as<int>()}, \
+                {"league", c[1].as<std::string>()}, \
+                {"season", c[2].as<std::string>()}, \
+                {"hometeam", c[3].as<std::string>()}, \
+                {"awayteam", c[4].as<std::string>()} \
+            };
+        }
+        C.disconnect();
+        
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+    }
+    
+    return table;
 }
 
 void Database::set_matchdate(unsigned int id, std::string league, std::string season, std::string hometeam, std::string awayteam, std::string match_start_at) {
@@ -131,73 +236,6 @@ void Database::set_matchdate(unsigned int id, std::string league, std::string se
         
         W.exec(query);
         W.commit();
-        C.disconnect();
-        
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
-    }
-}
-
-void Database::get_matches_without_startdate(std::string league, std::string season) {
-    try {
-        matches_without_startdate["teams"] = { };
-        pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
-        if (C.is_open()) {
-            //std::cout << "Connected to database" << std::endl;
-        } else {
-            std::cout << "Unable to connect to database" << std::endl;
-        }
-        std::string query = "";
-        query = "select * from matches where league = '" + league + "'";
-        query += " and season = '" + season + "'";
-        query += " and match_start_at is null and match_began_at is null and match_ended_at is null";
-        query += " order by hometeam, awayteam";
-        pqxx::nontransaction N(C);
-        pqxx::result R(N.exec(query));
-        for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
-            matches_without_startdate["teams"] += { \
-                {"id", c[0].as<int>()}, \
-                {"league", c[1].as<std::string>()}, \
-                {"season", c[2].as<std::string>()}, \
-                {"hometeam", c[3].as<std::string>()}, \
-                {"awayteam", c[4].as<std::string>()} \
-            };
-        }
-        C.disconnect();
-        
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
-    }
-}
-
-void Database::get_matches() {
-    try {
-        matches["teams"] = { };
-        pqxx::connection C("dbname=sports user=claus hostaddr=127.0.0.1 port=5432");
-        if (C.is_open()) {
-            //std::cout << "Connected to database" << std::endl;
-        } else {
-            std::cout << "Unable to connect to database" << std::endl;
-        }
-        std::string querty = "select * from matches where league = 'La Liga' \
-        and season = '2015/2016' \
-        and match_began_at is not null \
-        and match_ended_at is null \
-        order by match_start_at asc, id";
-        pqxx::nontransaction N(C);
-        pqxx::result R(N.exec(query));
-        for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
-            matches["teams"] += { \
-                {"id", c[0].as<int>()}, \
-                {"league", c[1].as<std::string>()}, \
-                {"season", c[2].as<std::string>()}, \
-                {"hometeam", c[3].as<std::string>()}, \
-                {"awayteam", c[4].as<std::string>()}, \
-                {"match_start_at", c[5].as<std::string>()}, \
-                {"hometeam_score", c[8].as<int>()}, \
-                {"awayteam_score", c[9].as<int>()} \
-            };
-        }
         C.disconnect();
         
     } catch (const std::exception& e) {

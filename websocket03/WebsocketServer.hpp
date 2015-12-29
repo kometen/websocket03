@@ -93,7 +93,6 @@ public:
     
     void run(uint16_t port);
 
-    void show_table(connection_hdl hdl, server::message_ptr msg);
     void show_matches(connection_hdl hdl, server::message_ptr msg);
     void show_coming_matches(connection_hdl hdl, server::message_ptr msg);
     void show_finished_matches(connection_hdl hdl, server::message_ptr msg);
