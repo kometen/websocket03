@@ -13,10 +13,6 @@
 
 int main(int argc, const char * argv[]) {
     WebsocketServer server;
-/*    server.get_table();
-    server.get_coming_matches("La Liga", "2015/2016");
-    server.get_matches();
-    server.get_finished_matches("La Liga", "2015/2016");*/
     server.run(9002);
     return 0;
 }
