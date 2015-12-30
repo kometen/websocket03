@@ -8,6 +8,14 @@
 
 #include "WebsocketServer.hpp"
 
+WebsocketServer::WebsocketServer() : m_next_session_id(1) {
+    m_server.init_asio();
+    
+    m_server.set_open_handler(bind(&WebsocketServer::on_open, this, ::_1));
+    m_server.set_close_handler(bind(&WebsocketServer::on_close, this, ::_1));
+    m_server.set_message_handler(bind(&WebsocketServer::on_message, this, ::_1, ::_2));
+}
+
 void WebsocketServer::on_open(connection_hdl hdl) {
     connection_ptr con = m_server.get_con_from_hdl(hdl);
     
