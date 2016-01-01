@@ -9,13 +9,17 @@
 #ifndef Database_hpp
 #define Database_hpp
 
+#include <stack>
 #include <json.hpp>
 #include <pqxx/pqxx>
 
 class Database {
 private:
+    const std::string connectionString = "dbname=sports user=claus hostaddr=127.0.0.1 port=5432";
+    std::stack<pqxx::connection*> dbpool;
 
 public:
+    Database(const unsigned int);
     nlohmann::json get_table(const nlohmann::json);
     nlohmann::json get_matches(const nlohmann::json);
     nlohmann::json get_finished_matches(const nlohmann::json);

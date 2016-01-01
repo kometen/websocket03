@@ -13,7 +13,7 @@ WebsocketServer::WebsocketServer() : m_next_session_id(1) {
     
     m_server.set_open_handler(bind(&WebsocketServer::on_open, this, ::_1));
     m_server.set_close_handler(bind(&WebsocketServer::on_close, this, ::_1));
-    m_server.set_message_handler(bind(&WebsocketServer::on_message, this, ::_1, ::_2));
+    m_server.set_message_handler(bind(&WebsocketServer::on_message, this, ::_1, ::_2, database));
 }
 
 void WebsocketServer::on_open(connection_hdl hdl) {
@@ -31,9 +31,8 @@ void WebsocketServer::on_close(connection_hdl hdl) {
     m_connections.erase(hdl);
 }
 
-void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg) {
+void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Database database) {
     connection_ptr con = m_server.get_con_from_hdl(hdl);
-    Database database {};
     
     nlohmann::json jdata;
     
