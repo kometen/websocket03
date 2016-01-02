@@ -29,11 +29,11 @@ nlohmann::json Database::get_table(const nlohmann::json json) {
     table["type"] = "table";
 
     auto *D = dbpool.top();
+    pqxx::nontransaction N(*D);
     dbpool.pop();
     
     std::string query = "select * from teams where league = $1 and season = $2";
     (*D).prepare(prepared_table, query);
-    pqxx::nontransaction N(*D);
     pqxx::result R(N.prepared(prepared_table)(league)(season).exec());
 
     for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
@@ -64,6 +64,7 @@ nlohmann::json Database::get_matches(const nlohmann::json json) {
     table["type"] = "matches";
 
     auto *D = dbpool.top();
+    pqxx::nontransaction N(*D);
     dbpool.pop();
 
     std::string query = "select * from matches where league = $1 and season = $2";
@@ -71,7 +72,6 @@ nlohmann::json Database::get_matches(const nlohmann::json json) {
     query += " and match_ended_at is null";
     query += " order by match_start_at asc, id";
     (*D).prepare(prepared_table, query);
-    pqxx::nontransaction N(*D);
     pqxx::result R(N.prepared(prepared_table)(league)(season).exec());
     
     for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
@@ -102,13 +102,13 @@ nlohmann::json Database::get_finished_matches(const nlohmann::json json) {
     table["teams"] = { };
 
     auto *D = dbpool.top();
+    pqxx::nontransaction N(*D);
     dbpool.pop();
     
     std::string query = "select * from matches where league = $1 and season = $2";
     query += " and match_start_at is not null and match_began_at is not null and match_ended_at is not null";
     query += " order by match_ended_at desc limit 10";
     (*D).prepare(prepared_table, query);
-    pqxx::nontransaction N(*D);
     pqxx::result R(N.prepared(prepared_table)(league)(season).exec());
     
     for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
@@ -139,13 +139,13 @@ nlohmann::json Database::get_coming_matches(const nlohmann::json json) {
     table["teams"] = { };
 
     auto *D = dbpool.top();
+    pqxx::nontransaction N(*D);
     dbpool.pop();
     
     std::string query = "select * from matches where league = $1 and season = $2";
     query += " and match_start_at is not null and match_began_at is null and match_ended_at is null";
     query += " order by match_start_at, hometeam limit 10";
     (*D).prepare(prepared_table, query);
-    pqxx::nontransaction N(*D);
     pqxx::result R(N.prepared(prepared_table)(league)(season).exec());
     
     for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
@@ -175,13 +175,13 @@ nlohmann::json Database::get_matches_without_startdate(const nlohmann::json json
     table["type"] = "matches_without_startdate";
 
     auto *D = dbpool.top();
+    pqxx::nontransaction N(*D);
     dbpool.pop();
     
     std::string query = "select * from matches where league = $1 and season = $2";
     query += " and match_start_at is null and match_began_at is null and match_ended_at is null";
     query += " order by hometeam, awayteam";
     (*D).prepare(prepared_table, query);
-    pqxx::nontransaction N(*D);
     pqxx::result R(N.prepared(prepared_table)(league)(season).exec());
 
     for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) {
@@ -203,12 +203,12 @@ void Database::set_matchdate(unsigned int id, std::string league, std::string se
     const std::string prepared_table = "set_matchdate";
 
     auto *D = dbpool.top();
+    pqxx::work W(*D);
     dbpool.pop();
 
     std::string query = "update matches set match_start_at = $1";
     query += " where league = $2 and season = $3 and hometeam = $4 and awayteam = $5";
     (*D).prepare(prepared_table, query);
-    pqxx::work W(*D);
     W.prepared(prepared_table)(match_start_at)(league)(season)(hometeam)(awayteam).exec();
     W.commit();
     
@@ -219,13 +219,13 @@ void Database::update_standing(std::string points, std::string league, std::stri
     const std::string prepared_table = "update_standing";
 
     auto *D = dbpool.top();
+    pqxx::work W(*D);
     dbpool.pop();
     
     std::string query = "update teams set points = points + $1";
     query += ", won = won + $2, draw = draw + $3, lost = lost + $4";
     query += " where league = $5 and season = $6 and team = $7";
     (*D).prepare(prepared_table, query);
-    pqxx::work W(*D);
     W.prepared(prepared_table)(points)(won)(draw)(lost)(league)(season)(team).exec();
     W.commit();
 
@@ -241,7 +241,6 @@ void Database::update_goalscore(std::string league, std::string season, std::str
     dbpool.pop();
     
     std::string team_score = venue + "team_score";
-    std::cout << "team_score: " << team_score << std::endl;
     
 //    std::string query = "update matches set " + venue + "team_score = " + venue + "team_score + " + goal;
     std::string query = "update matches set " + team_score + " = " + team_score + " + $1";
@@ -298,12 +297,12 @@ void Database::start_match(std::string league, std::string season, std::string h
     const std::string prepared_table = "start_match";
 
     auto *D = dbpool.top();
+    pqxx::work W(*D);
     dbpool.pop();
     
     std::string query = "update matches set match_began_at = now()";
     query += " where league = $1 and season = $2 and hometeam = $3 and awayteam = $4";
     (*D).prepare(prepared_table, query);
-    pqxx::work W(*D);
     W.prepared(prepared_table)(league)(season)(hometeam)(awayteam).exec();
     W.commit();
     
@@ -314,12 +313,12 @@ void Database::end_match(std::string league, std::string season, std::string hom
     const std::string prepared_table = "end_match";
 
     auto *D = dbpool.top();
+    pqxx::work W(*D);
     dbpool.pop();
     
     std::string query = "update matches set match_ended_at = now()";
     query += " where league = $1 and season = $2 and hometeam = $3 and awayteam = $4";
     (*D).prepare(prepared_table, query);
-    pqxx::work W(*D);
     W.prepared(prepared_table)(league)(season)(hometeam)(awayteam).exec();
     W.commit();
 
