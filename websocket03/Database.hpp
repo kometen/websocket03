@@ -27,9 +27,9 @@ public:
     nlohmann::json get_matches_without_startdate(const nlohmann::json);
     void set_matchdate(unsigned int id, std::string league, std::string season, std::string hometeam, std::string awayteam, std::string match_start_at);
     void update_standing(std::string points, std::string league, std::string season, std::string team, std::string won, std::string draw, std::string lost);
-    void update_goalscore(std::string league, std::string season, std::string team, std::string venue, std::string goal, std::string hometeam, std::string awayteam);
-    void start_match(std::string league, std::string season, std::string hometeam, std::string awayteam);
-    void end_match(std::string league, std::string season, std::string hometeam, std::string awayteam);
+    void update_goalscore(const nlohmann::json);
+    void start_match(const nlohmann::json);
+    void end_match(const nlohmann::json);
 };
 
 #endif /* Database_hpp */

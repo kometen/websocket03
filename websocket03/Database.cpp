@@ -232,15 +232,19 @@ void Database::update_standing(std::string points, std::string league, std::stri
     dbpool.push(D);
 }
 
-void Database::update_goalscore(std::string league, std::string season, std::string team, std::string venue, std::string goal, std::string hometeam, std::string awayteam) {
+void Database::update_goalscore(const nlohmann::json json) {
     const std::string prepared_table_home = "update_goalscore_home";
     const std::string prepared_table_away = "update_goalscore_away";
+    const std::string team_score = json["team_score"];
+    const std::string goal = json["goal"];
+    const std::string league = json["league"];
+    const std::string season = json["season"];
+    const std::string hometeam = json["hometeam"];
+    const std::string awayteam = json["awayteam"];
 
     auto *D = dbpool.top();
     pqxx::work W(*D);
     dbpool.pop();
-    
-    std::string team_score = venue + "team_score";
     
 //    std::string query = "update matches set " + venue + "team_score = " + venue + "team_score + " + goal;
     std::string query = "update matches set " + team_score + " = " + team_score + " + $1";
@@ -258,7 +262,7 @@ void Database::update_goalscore(std::string league, std::string season, std::str
     const std::string prepared_table_home2 = "update_hometeam_goalscore2";
     const std::string prepared_table_away1 = "update_awayteam_goalscore1";
     const std::string prepared_table_away2 = "update_awayteam_goalscore2";
-    if (venue == "home") {
+    if (team_score == "hometeam_score") {
         // Add to goals_for to hometeam
         // query = "update teams set goals_for = goals_for + " + goal;
         query = "update teams set goals_for = goals_for + $1";
@@ -293,8 +297,12 @@ void Database::update_goalscore(std::string league, std::string season, std::str
     dbpool.push(D);
 }
 
-void Database::start_match(std::string league, std::string season, std::string hometeam, std::string awayteam) {
+void Database::start_match(const nlohmann::json json) {
     const std::string prepared_table = "start_match";
+    const std::string league = json["league"];
+    const std::string season = json["season"];
+    const std::string hometeam = json["hometeam"];
+    const std::string awayteam = json["awayteam"];
 
     auto *D = dbpool.top();
     pqxx::work W(*D);
@@ -309,8 +317,12 @@ void Database::start_match(std::string league, std::string season, std::string h
     dbpool.push(D);
 }
 
-void Database::end_match(std::string league, std::string season, std::string hometeam, std::string awayteam) {
+void Database::end_match(const nlohmann::json json) {
     const std::string prepared_table = "end_match";
+    const std::string league = json["league"];
+    const std::string season = json["season"];
+    const std::string hometeam = json["hometeam"];
+    const std::string awayteam = json["awayteam"];
 
     auto *D = dbpool.top();
     pqxx::work W(*D);

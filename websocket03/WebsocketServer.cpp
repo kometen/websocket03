@@ -95,8 +95,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
             
             unsigned int hts = jdata["hometeam_score"];
             unsigned int ats = jdata["awayteam_score"];
-            int goal = jdata["goal"];
-            std::string sgoal = std::to_string(goal);
             std::string minusone = "-1";
             std::string minustwo = "-2";
             std::string zero = "0";
@@ -132,9 +130,11 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
             
             // Add goal to matches- and teams-table.
             if (jdata["scoringteam"] == "hometeam") {
-                database.update_goalscore(jdata["league"], jdata["season"], jdata["hometeam"], "home", sgoal, jdata["hometeam"], jdata["awayteam"]);
+                jdata["team_score"] = "hometeam_score";
+                database.update_goalscore(jdata);
             } else {
-                database.update_goalscore(jdata["league"], jdata["season"], jdata["awayteam"], "away", sgoal, jdata["hometeam"], jdata["awayteam"]);
+                jdata["team_score"] = "awayteam_score";
+                database.update_goalscore(jdata);
             }
             
             // Get table
@@ -162,8 +162,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
             
             unsigned int hts = jdata["hometeam_score"];
             unsigned int ats = jdata["awayteam_score"];
-            int goal = jdata["goal"];
-            std::string sgoal = std::to_string(goal);
             std::string minusone = "-1";
             std::string minustwo = "-2";
             std::string zero = "0";
@@ -201,9 +199,11 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                 
                 // Remove goal to matches- and teams-table.
                 if (jdata["scoringteam"] == "hometeam") {
-                    database.update_goalscore(jdata["league"], jdata["season"], jdata["hometeam"], "home", sgoal, jdata["hometeam"], jdata["awayteam"]);
+                    jdata["team_score"] = "hometeam_score";
+                    database.update_goalscore(jdata);
                 } else {
-                    database.update_goalscore(jdata["league"], jdata["season"], jdata["awayteam"], "away", sgoal, jdata["hometeam"], jdata["awayteam"]);
+                    jdata["team_score"] = "awayteam_score";
+                    database.update_goalscore(jdata);
                 }
                 
                 // Get table
@@ -236,7 +236,7 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
             std::string one = "1";
             database.update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"], zero, one, zero);
             database.update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"], zero, one, zero);
-            database.start_match(jdata["league"], jdata["season"], jdata["hometeam"], jdata["awayteam"]);
+            database.start_match(jdata);
             
             // Get table
             table.clear();
@@ -269,7 +269,7 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
             nlohmann::json coming_matches;
             nlohmann::json finished_matches;
             
-            database.end_match(jdata["league"], jdata["season"], jdata["hometeam"], jdata["awayteam"]);
+            database.end_match(jdata);
             
             // Get matches
             matches.clear();
