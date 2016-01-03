@@ -109,7 +109,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                 jdata["won"] = one;
                 jdata["draw"] = minusone;
                 jdata["lost"] = zero;
-//                database.update_standing(two, jdata["league"], jdata["season"], jdata["hometeam"], one, minusone, zero);
                 database.update_standing(jdata);
 
                 jdata["points"] = minusone;
@@ -117,7 +116,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                 jdata["won"] = zero;
                 jdata["draw"] = minusone;
                 jdata["lost"] = one;
-//                database.update_standing(minusone, jdata["league"], jdata["season"], jdata["awayteam"], zero, minusone, one);
                 database.update_standing(jdata);
             }
             // If it was equal score and awayteam score. And shuffle points.
@@ -128,7 +126,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                 jdata["won"] = zero;
                 jdata["draw"] = minusone;
                 jdata["lost"] = one;
-//                database.update_standing(minusone, jdata["league"], jdata["season"], jdata["hometeam"], zero, minusone, one);
                 database.update_standing(jdata);
 
                 jdata["points"] = two;
@@ -136,7 +133,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                 jdata["won"] = one;
                 jdata["draw"] = minusone;
                 jdata["lost"] = zero;
-//                database.update_standing(two, jdata["league"], jdata["season"], jdata["awayteam"], one, minusone, zero);
                 database.update_standing(jdata);
             }
             
@@ -148,7 +144,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                 jdata["won"] = zero;
                 jdata["draw"] = one;
                 jdata["lost"] = minusone;
-//                database.update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"], zero, one, minusone);
                 database.update_standing(jdata);
 
                 jdata["points"] = minustwo;
@@ -157,7 +152,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                 jdata["draw"] = one;
                 jdata["lost"] = zero;
                 database.update_standing(jdata);
-//                database.update_standing(minustwo, jdata["league"], jdata["season"], jdata["awayteam"], minusone, one, zero);
             }
             
             // If awayteam is down by one and scores shuffle points.
@@ -169,7 +163,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                 jdata["draw"] = one;
                 jdata["lost"] = zero;
                 database.update_standing(jdata);
-//                database.update_standing(minustwo, jdata["league"], jdata["season"], jdata["hometeam"], minusone, one, zero);
 
                 jdata["points"] = one;
                 jdata["team"] = jdata["awayteam"];
@@ -177,7 +170,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                 jdata["draw"] = one;
                 jdata["lost"] = minusone;
                 database.update_standing(jdata);
-//                database.update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"], zero, one, minusone);
             }
             
             // Add goal to matches- and teams-table.
@@ -231,7 +223,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                     jdata["draw"] = minusone;
                     jdata["lost"] = one;
                     database.update_standing(jdata);
-//                    database.update_standing(minusone, jdata["league"], jdata["season"], jdata["hometeam"], zero, minusone, one);
 
                     jdata["points"] = two;
                     jdata["team"] = jdata["awayteam"];
@@ -239,7 +230,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                     jdata["draw"] = minusone;
                     jdata["lost"] = zero;
                     database.update_standing(jdata);
-//                    database.update_standing(two, jdata["league"], jdata["season"], jdata["awayteam"], one, minusone, zero);
                 }
                 // If it was equal score and awayteam have a goal cancellled. Shuffle points.
                 if (hts == ats && jdata["scoringteam"] == "awayteam") {
@@ -250,7 +240,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                     jdata["draw"] = minusone;
                     jdata["lost"] = zero;
                     database.update_standing(jdata);
-//                    database.update_standing(two, jdata["league"], jdata["season"], jdata["hometeam"], one, minusone, zero);
 
                     jdata["points"] = minusone;
                     jdata["team"] = jdata["awayteam"];
@@ -258,7 +247,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                     jdata["draw"] = minusone;
                     jdata["lost"] = zero;
                     database.update_standing(jdata);
-//                    database.update_standing(minusone, jdata["league"], jdata["season"], jdata["awayteam"], zero, minusone, one);
                 }
                 
                 // If hometeam is up by one and goal is cancelled shuffle points.
@@ -270,7 +258,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                     jdata["draw"] = one;
                     jdata["lost"] = zero;
                     database.update_standing(jdata);
-//                    database.update_standing(minustwo, jdata["league"], jdata["season"], jdata["hometeam"], minusone, one, zero);
 
                     jdata["points"] = one;
                     jdata["team"] = jdata["awayteam"];
@@ -278,7 +265,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                     jdata["draw"] = one;
                     jdata["lost"] = minusone;
                     database.update_standing(jdata);
-//                    database.update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"], zero, one, minusone);
                 }
                 
                 // If awayteam is up by one and goal is cancelled shuffle points.
@@ -290,7 +276,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                     jdata["draw"] = one;
                     jdata["lost"] = minusone;
                     database.update_standing(jdata);
-//                    database.update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"], zero, one, minusone);
 
                     jdata["points"] = minustwo;
                     jdata["team"] = jdata["awayteam"];
@@ -298,7 +283,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
                     jdata["draw"] = one;
                     jdata["lost"] = zero;
                     database.update_standing(jdata);
-//                    database.update_standing(minustwo, jdata["league"], jdata["season"], jdata["awayteam"], minusone, one, zero);
                 }
                 
                 // Remove goal to matches- and teams-table.
