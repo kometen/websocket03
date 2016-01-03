@@ -25,7 +25,6 @@ public:
     nlohmann::json get_finished_matches(const nlohmann::json);
     nlohmann::json get_coming_matches(const nlohmann::json);
     nlohmann::json get_matches_without_startdate(const nlohmann::json);
-//    void set_matchdate(unsigned int id, std::string league, std::string season, std::string hometeam, std::string awayteam, std::string match_start_at);
     void set_matchdate(const nlohmann::json);
     void update_standing(std::string points, std::string league, std::string season, std::string team, std::string won, std::string draw, std::string lost);
     void update_goalscore(const nlohmann::json);

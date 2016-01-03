@@ -340,7 +340,6 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
             nlohmann::json matches_without_startdate;
             nlohmann::json coming_matches;
             
-//            database.set_matchdate(jdata["id"], jdata["league"], jdata["season"], jdata["hometeam"], jdata["awayteam"], jdata["match_start_at"]);
             database.set_matchdate(jdata);
 
             // Get matches without startdate

@@ -199,7 +199,6 @@ nlohmann::json Database::get_matches_without_startdate(const nlohmann::json json
     return table;
 }
 
-//void Database::set_matchdate(unsigned int id, std::string league, std::string season, std::string hometeam, std::string awayteam, std::string match_start_at) {
 void Database::set_matchdate(const nlohmann::json json) {
     const std::string prepared_table = "set_matchdate";
     const std::string league = json["league"];
@@ -252,7 +251,6 @@ void Database::update_goalscore(const nlohmann::json json) {
     pqxx::work W(*D);
     dbpool.pop();
     
-//    std::string query = "update matches set " + venue + "team_score = " + venue + "team_score + " + goal;
     std::string query = "update matches set " + team_score + " = " + team_score + " + $1";
     query += " where league = $2 and season = $3 and hometeam = $4 and awayteam = $5";
     if (team_score == "hometeam_score") {
