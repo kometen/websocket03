@@ -21,8 +21,8 @@ Database::Database(const unsigned int connections) {
 
 nlohmann::json Database::get_table(const nlohmann::json json) {
     const std::string prepared_table = "get_table";
-    std::string league = json["league"];
-    std::string season = json["season"];
+    const std::string league = json["league"];
+    const std::string season = json["season"];
     
     nlohmann::json table;
     table["teams"] = { };
@@ -57,8 +57,8 @@ nlohmann::json Database::get_table(const nlohmann::json json) {
 
 nlohmann::json Database::get_matches(const nlohmann::json json) {
     const std::string prepared_table = "get_matches";
-    std::string league = json["league"];
-    std::string season = json["season"];
+    const std::string league = json["league"];
+    const std::string season = json["season"];
     
     nlohmann::json table;
     table["type"] = "matches";
@@ -94,8 +94,8 @@ nlohmann::json Database::get_matches(const nlohmann::json json) {
 
 nlohmann::json Database::get_finished_matches(const nlohmann::json json) {
     const std::string prepared_table = "get_finished_matches";
-    std::string league = json["league"];
-    std::string season = json["season"];
+    const std::string league = json["league"];
+    const std::string season = json["season"];
 
     nlohmann::json table;
     table["type"] = "finished_matches";
@@ -168,8 +168,8 @@ nlohmann::json Database::get_coming_matches(const nlohmann::json json) {
 
 nlohmann::json Database::get_matches_without_startdate(const nlohmann::json json) {
     const std::string prepared_table = "get_matches_without_startdate";
-    std::string league = json["league"];
-    std::string season = json["season"];
+    const std::string league = json["league"];
+    const std::string season = json["season"];
     
     nlohmann::json table;
     table["type"] = "matches_without_startdate";
@@ -199,8 +199,14 @@ nlohmann::json Database::get_matches_without_startdate(const nlohmann::json json
     return table;
 }
 
-void Database::set_matchdate(unsigned int id, std::string league, std::string season, std::string hometeam, std::string awayteam, std::string match_start_at) {
+//void Database::set_matchdate(unsigned int id, std::string league, std::string season, std::string hometeam, std::string awayteam, std::string match_start_at) {
+void Database::set_matchdate(const nlohmann::json json) {
     const std::string prepared_table = "set_matchdate";
+    const std::string league = json["league"];
+    const std::string season = json["season"];
+    const std::string hometeam = json["hometeam"];
+    const std::string awayteam = json["awayteam"];
+    const std::string match_start_at = json["match_start_at"];
 
     auto *D = dbpool.top();
     pqxx::work W(*D);
