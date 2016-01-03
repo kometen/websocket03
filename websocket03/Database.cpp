@@ -220,8 +220,16 @@ void Database::set_matchdate(const nlohmann::json json) {
     dbpool.push(D);
 }
 
-void Database::update_standing(std::string points, std::string league, std::string season, std::string team, std::string won, std::string draw, std::string lost) {
+//void Database::update_standing(std::string points, std::string league, std::string season, std::string team, std::string won, std::string draw, std::string lost) {
+void Database::update_standing(const nlohmann::json json) {
     const std::string prepared_table = "update_standing";
+    const std::string points = json["points"];
+    const std::string league = json["league"];
+    const std::string season = json["season"];
+    const std::string team = json["team"];
+    const std::string won = json["won"];
+    const std::string draw = json["draw"];
+    const std::string lost = json["lost"];
 
     auto *D = dbpool.top();
     pqxx::work W(*D);

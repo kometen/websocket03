@@ -104,28 +104,80 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
             // If it was equal score and hometeam score. And shuffle points.
             if (hts == ats && jdata["scoringteam"] == "hometeam") {
                 // Add two points to the hometeam. And subtract one from the awayteam.
-                database.update_standing(two, jdata["league"], jdata["season"], jdata["hometeam"], one, minusone, zero);
-                database.update_standing(minusone, jdata["league"], jdata["season"], jdata["awayteam"], zero, minusone, one);
+                jdata["points"] = two;
+                jdata["team"] = jdata["hometeam"];
+                jdata["won"] = one;
+                jdata["draw"] = minusone;
+                jdata["lost"] = zero;
+//                database.update_standing(two, jdata["league"], jdata["season"], jdata["hometeam"], one, minusone, zero);
+                database.update_standing(jdata);
+
+                jdata["points"] = minusone;
+                jdata["team"] = jdata["awayteam"];
+                jdata["won"] = zero;
+                jdata["draw"] = minusone;
+                jdata["lost"] = one;
+//                database.update_standing(minusone, jdata["league"], jdata["season"], jdata["awayteam"], zero, minusone, one);
+                database.update_standing(jdata);
             }
             // If it was equal score and awayteam score. And shuffle points.
             if (hts == ats && jdata["scoringteam"] == "awayteam") {
                 // Subtract one point from the hometeam and add two to the awayteam.
-                database.update_standing(minusone, jdata["league"], jdata["season"], jdata["hometeam"], zero, minusone, one);
-                database.update_standing(two, jdata["league"], jdata["season"], jdata["awayteam"], one, minusone, zero);
+                jdata["points"] = minusone;
+                jdata["team"] = jdata["hometeam"];
+                jdata["won"] = zero;
+                jdata["draw"] = minusone;
+                jdata["lost"] = one;
+//                database.update_standing(minusone, jdata["league"], jdata["season"], jdata["hometeam"], zero, minusone, one);
+                database.update_standing(jdata);
+
+                jdata["points"] = two;
+                jdata["team"] = jdata["awayteam"];
+                jdata["won"] = one;
+                jdata["draw"] = minusone;
+                jdata["lost"] = zero;
+//                database.update_standing(two, jdata["league"], jdata["season"], jdata["awayteam"], one, minusone, zero);
+                database.update_standing(jdata);
             }
             
             // If hometeam is down by one and scores shuffle points.
             if ((hts - ats) == -1 && jdata["scoringteam"] == "hometeam") {
                 // Add one point to hometeam and subtract two points from awayteam.
-                database.update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"], zero, one, minusone);
-                database.update_standing(minustwo, jdata["league"], jdata["season"], jdata["awayteam"], minusone, one, zero);
+                jdata["points"] = one;
+                jdata["team"] = jdata["hometeam"];
+                jdata["won"] = zero;
+                jdata["draw"] = one;
+                jdata["lost"] = minusone;
+//                database.update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"], zero, one, minusone);
+                database.update_standing(jdata);
+
+                jdata["points"] = minustwo;
+                jdata["team"] = jdata["awayteam"];
+                jdata["won"] = minusone;
+                jdata["draw"] = one;
+                jdata["lost"] = zero;
+                database.update_standing(jdata);
+//                database.update_standing(minustwo, jdata["league"], jdata["season"], jdata["awayteam"], minusone, one, zero);
             }
             
             // If awayteam is down by one and scores shuffle points.
             if ((hts - ats) == 1 && jdata["scoringteam"] == "awayteam") {
                 // Subtract two points from hometeam and add one point to awayteam.
-                database.update_standing(minustwo, jdata["league"], jdata["season"], jdata["hometeam"], minusone, one, zero);
-                database.update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"], zero, one, minusone);
+                jdata["points"] = minustwo;
+                jdata["team"] = jdata["hometeam"];
+                jdata["won"] = minusone;
+                jdata["draw"] = one;
+                jdata["lost"] = zero;
+                database.update_standing(jdata);
+//                database.update_standing(minustwo, jdata["league"], jdata["season"], jdata["hometeam"], minusone, one, zero);
+
+                jdata["points"] = one;
+                jdata["team"] = jdata["awayteam"];
+                jdata["won"] = zero;
+                jdata["draw"] = one;
+                jdata["lost"] = minusone;
+                database.update_standing(jdata);
+//                database.update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"], zero, one, minusone);
             }
             
             // Add goal to matches- and teams-table.
@@ -162,39 +214,91 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
             
             unsigned int hts = jdata["hometeam_score"];
             unsigned int ats = jdata["awayteam_score"];
-            std::string minusone = "-1";
-            std::string minustwo = "-2";
-            std::string zero = "0";
-            std::string one = "1";
-            std::string two = "2";
+            const std::string minusone = "-1";
+            const std::string minustwo = "-2";
+            const std::string zero = "0";
+            const std::string one = "1";
+            const std::string two = "2";
             
             // Don't cancel goal if score is zero.
             if ((jdata["scoringteam"] == "hometeam" && hts > 0) || (jdata["scoringteam"] == "awayteam" && ats > 0)) {
                 // If it was equal score and hometeam have a goal cancelled. Shuffle points.
                 if (hts == ats && jdata["scoringteam"] == "hometeam") {
                     // Subtract one point from the hometeam. And add two to the awayteam.
-                    database.update_standing(minusone, jdata["league"], jdata["season"], jdata["hometeam"], zero, minusone, one);
-                    database.update_standing(two, jdata["league"], jdata["season"], jdata["awayteam"], one, minusone, zero);
+                    jdata["points"] = minusone;
+                    jdata["team"] = jdata["hometeam"];
+                    jdata["won"] = zero;
+                    jdata["draw"] = minusone;
+                    jdata["lost"] = one;
+                    database.update_standing(jdata);
+//                    database.update_standing(minusone, jdata["league"], jdata["season"], jdata["hometeam"], zero, minusone, one);
+
+                    jdata["points"] = two;
+                    jdata["team"] = jdata["awayteam"];
+                    jdata["won"] = one;
+                    jdata["draw"] = minusone;
+                    jdata["lost"] = zero;
+                    database.update_standing(jdata);
+//                    database.update_standing(two, jdata["league"], jdata["season"], jdata["awayteam"], one, minusone, zero);
                 }
                 // If it was equal score and awayteam have a goal cancellled. Shuffle points.
                 if (hts == ats && jdata["scoringteam"] == "awayteam") {
                     // Add two points to the hometeam and subtract one from the awayteam.
-                    database.update_standing(two, jdata["league"], jdata["season"], jdata["hometeam"], one, minusone, zero);
-                    database.update_standing(minusone, jdata["league"], jdata["season"], jdata["awayteam"], zero, minusone, one);
+                    jdata["points"] = two;
+                    jdata["team"] = jdata["hometeam"];
+                    jdata["won"] = one;
+                    jdata["draw"] = minusone;
+                    jdata["lost"] = zero;
+                    database.update_standing(jdata);
+//                    database.update_standing(two, jdata["league"], jdata["season"], jdata["hometeam"], one, minusone, zero);
+
+                    jdata["points"] = minusone;
+                    jdata["team"] = jdata["awayteam"];
+                    jdata["won"] = zero;
+                    jdata["draw"] = minusone;
+                    jdata["lost"] = zero;
+                    database.update_standing(jdata);
+//                    database.update_standing(minusone, jdata["league"], jdata["season"], jdata["awayteam"], zero, minusone, one);
                 }
                 
                 // If hometeam is up by one and goal is cancelled shuffle points.
                 if ((hts - ats) == 1 && jdata["scoringteam"] == "hometeam") {
                     // Subtract two points from hometeam and add one point to awayteam.
-                    database.update_standing(minustwo, jdata["league"], jdata["season"], jdata["hometeam"], minusone, one, zero);
-                    database.update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"], zero, one, minusone);
+                    jdata["points"] = minustwo;
+                    jdata["team"] = jdata["hometeam"];
+                    jdata["won"] = minusone;
+                    jdata["draw"] = one;
+                    jdata["lost"] = zero;
+                    database.update_standing(jdata);
+//                    database.update_standing(minustwo, jdata["league"], jdata["season"], jdata["hometeam"], minusone, one, zero);
+
+                    jdata["points"] = one;
+                    jdata["team"] = jdata["awayteam"];
+                    jdata["won"] = zero;
+                    jdata["draw"] = one;
+                    jdata["lost"] = minusone;
+                    database.update_standing(jdata);
+//                    database.update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"], zero, one, minusone);
                 }
                 
                 // If awayteam is up by one and goal is cancelled shuffle points.
                 if ((hts - ats) == -1 && jdata["scoringteam"] == "awayteam") {
                     // Add one point to hometeam and subtract two points from awayteam.
-                    database.update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"], zero, one, minusone);
-                    database.update_standing(minustwo, jdata["league"], jdata["season"], jdata["awayteam"], minusone, one, zero);
+                    jdata["points"] = one;
+                    jdata["team"] = jdata["hometeam"];
+                    jdata["won"] = zero;
+                    jdata["draw"] = one;
+                    jdata["lost"] = minusone;
+                    database.update_standing(jdata);
+//                    database.update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"], zero, one, minusone);
+
+                    jdata["points"] = minustwo;
+                    jdata["team"] = jdata["awayteam"];
+                    jdata["won"] = minusone;
+                    jdata["draw"] = one;
+                    jdata["lost"] = zero;
+                    database.update_standing(jdata);
+//                    database.update_standing(minustwo, jdata["league"], jdata["season"], jdata["awayteam"], minusone, one, zero);
                 }
                 
                 // Remove goal to matches- and teams-table.
@@ -231,11 +335,19 @@ void WebsocketServer::on_message(connection_hdl hdl, server::message_ptr msg, Da
             nlohmann::json table;
             nlohmann::json matches;
             nlohmann::json coming_matches;
+            const std::string zero = "0";
+            const std::string one = "1";
+            jdata["points"] = one;
+            jdata["won"] = zero;
+            jdata["draw"] = one;
+            jdata["lost"] = zero;
             
-            std::string zero = "0";
-            std::string one = "1";
-            database.update_standing(one, jdata["league"], jdata["season"], jdata["hometeam"], zero, one, zero);
-            database.update_standing(one, jdata["league"], jdata["season"], jdata["awayteam"], zero, one, zero);
+            jdata["team"] = jdata["hometeam"];
+            database.update_standing(jdata);
+
+            jdata["team"] = jdata["awayteam"];
+            database.update_standing(jdata);
+
             database.start_match(jdata);
             
             // Get table
