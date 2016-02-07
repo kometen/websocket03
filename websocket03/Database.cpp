@@ -155,9 +155,7 @@ nlohmann::json Database::get_coming_matches(const nlohmann::json json) {
             {"season", c[2].as<std::string>()}, \
             {"hometeam", c[3].as<std::string>()}, \
             {"awayteam", c[4].as<std::string>()}, \
-            {"match_start_at", c[5].as<std::string>()}, \
-            {"hometeam_score", c[8].as<int>()}, \
-            {"awayteam_score", c[9].as<int>()} \
+            {"match_start_at", c[5].as<std::string>()}
         };
     }
     
@@ -320,6 +318,7 @@ void Database::start_match(const nlohmann::json json) {
     dbpool.pop();
     
     std::string query = "update matches set match_began_at = now()";
+    query += ", hometeam_score = 0, awayteam_score = 0";
     query += " where league = $1 and season = $2 and hometeam = $3 and awayteam = $4";
     (*D).prepare(prepared_table, query);
     W.prepared(prepared_table)(league)(season)(hometeam)(awayteam).exec();
