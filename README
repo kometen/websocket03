@@ -6,17 +6,33 @@ https://github.com/nlohmann/json
 
 The purpose of this server is to send a football (european soccer)
 table to a webclient. The client can start a match, update how many
-goals are scored, and will update the table accordingly.
+goals are scored and update the table accordingly.
 
-Every time a goal is added the server update a database, currently
+Every time a goal is scored the server update a database, currently
 postgresql, and if points needs to be added or taken away, it will
 do so.
 
 When changes are made they are pushed back to the client. The table
 is sorted on the client.
 
-JSON is used to transmit data. I looked at messagepack to serialize
-but I could not get C++ messagepack to work for me so I just stuck
-to sending plain JSON atm.
+JSON is used to transmit data. The client uses send(). The server
+parse the string in om_message() and perform actions based on that.
 
-Messagepack worked when sending from the client. Probably my bad.
+When a client initially opens a websocket-connetion it always sends
+the message {"type":"get table"} and the server sends the league
+standings, current matches, finished matches, coming matches with an
+assigned startdate back to the client.
+
+When a goal is scored the client constructs a json-message with
+the scoring home- or away-team, goals, current time and part of the
+message is {"type":"goal"}. The server parses the json-message in a
+try-catch and if it is a valid json the update the appropriate tables
+and standings back.
+
+All clients-connections are added to a std::set during on_open()
+and this container is then traversed when updates are received from
+the clients. So when a team score all connected clients receive
+this information and all clients are thus updated.
+
+I've written a javascript-client which can be found at
+https://github.com/kometen/websocket-client.
