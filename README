@@ -6,7 +6,7 @@ https://github.com/nlohmann/json
 
 The purpose of this server is to send a football (european soccer)
 table to a webclient. The client can start a match, update how many
-goals are scored and update the table accordingly.
+goals are scored and the table is updated accordingly.
 
 A demo of the program is available at
 http://ec2-52-58-13-84.eu-central-1.compute.amazonaws.com/.
