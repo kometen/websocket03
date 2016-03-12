@@ -13,8 +13,9 @@ http://ec2-52-58-13-84.eu-central-1.compute.amazonaws.com/.
 
 My original intention was to design it for mobile devices so it is best
 viewed when changing the browsers viewmode to those devices. In safari
-the shortcut is alt+cmd+r to enter responsive mode. In chrome it is
-cmd+shift+m, and Firefox alt+cmd+m.
+the shortcut is alt+cmd+r to enter responsive mode. In chrome you must
+enter the console first with alt+cmd+j first and then cmd+shift+m.
+Firefox use alt+cmd+m.
 
 I added a delay before a goal is registered and this works fine on
 the desktop but it did not work so well on ios-devices. I think a
