@@ -8,9 +8,6 @@ The purpose of this server is to send a football (european soccer)
 table to a webclient. The client can start a match, update how many
 goals are scored and the table is updated accordingly.
 
-A demo of the program is available at
-http://ec2-52-58-13-84.eu-central-1.compute.amazonaws.com/.
-
 My original intention was to design it for mobile devices so it is best
 viewed when changing the browsers viewmode to those devices. In safari
 the shortcut is alt+cmd+r to enter responsive mode. In chrome you must
